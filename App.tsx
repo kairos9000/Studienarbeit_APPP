@@ -5,6 +5,7 @@ import { XMLParser, XMLBuilder, XMLValidator } from "fast-xml-parser";
 import { useEffect, useState } from "react";
 import * as Location from "expo-location";
 import * as TaskManager from "expo-task-manager";
+import * as SQLite from "expo-sqlite";
 import { parkingGarages } from "./staticDataParkingGarage";
 
 const GEOFENCING_TASK = "GEOFENCING_TASK";
@@ -15,11 +16,34 @@ TaskManager.defineTask(GEOFENCING_TASK, ({ data, error }: any) => {
         return;
     }
     if (data.eventType === Location.GeofencingEventType.Enter) {
-        console.log("You've entered region:", data.region);
+        // console.log("You've entered region:", data.region);
     } else if (data.eventType === Location.GeofencingEventType.Exit) {
-        console.log("You've left region:", data.region);
+        // console.log("You've left region:", data.region);
     }
 });
+
+const db = SQLite.openDatabase("db.ParkingGarages"); // returns Database object
+
+const populateStaticDataTable = () => {
+    parkingGarages.map((garage) => {
+        db.transaction((tx) => {
+            tx.executeSql(
+                `INSERT INTO GarageStaticData
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+                [
+                    garage.id,
+                    garage.name,
+                    garage.coords.latitude,
+                    garage.coords.longitude,
+                    garage.numberOfParkingSpots,
+                    garage.openingHours.startHour,
+                    garage.openingHours.endHour,
+                    garage.additionalInformation ? garage.additionalInformation : null,
+                ]
+            );
+        });
+    });
+};
 
 export default function App() {
     // const [location, setLocation] = useState<Location.LocationObject | null>(null);
@@ -39,6 +63,32 @@ export default function App() {
     };
 
     useEffect(() => {
+        // Check if the items table exists if not create it
+        db.transaction((tx) => {
+            tx.executeSql(
+                `CREATE TABLE IF NOT EXISTS Pricing (id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, FOREIGN KEY(garage) REFERENCES GarageStaticData(id),
+                isDayPricing INT, firstHour INT NOT NULL, followingHours INT NOT NULL, numHoursSpecialPrices INT, priceSpecialPrices INT, 
+                startHours VARCHAR(10), endHours VARCHAR(10))`
+            );
+        });
+        db.transaction((tx) => {
+            tx.executeSql(
+                `CREATE TABLE IF NOT EXISTS GarageStaticData (id INTEGER PRIMARY KEY NOT NULL, name TEXT NOT NULL, latitude REAL NOT NULL, longitude REAL NOT NULL,
+                numberOfParkingSpots INT NOT NULL, openingStartHour VARCHAR(10) NOT NULL, openingEndHour VARCHAR(10) NOT NULL, additionalInfo TEXT)`
+            );
+        });
+        db.transaction((tx) => {
+            tx.executeSql(`SELECT COUNT(*) FROM GarageStaticData`, [], (transaction, result) => {
+                if (result.rows.item(0)["COUNT(*)"] !== parkingGarages.length) {
+                    populateStaticDataTable();
+                }
+            });
+        });
+        db.transaction((tx) => {
+            tx.executeSql(`SELECT * FROM GarageStaticData`, [], (transaction, result) => {
+                console.log(result.rows);
+            });
+        });
         (async () => {
             let status = (await Location.requestForegroundPermissionsAsync()).status;
             if (status !== "granted") {
