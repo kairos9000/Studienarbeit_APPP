@@ -7,20 +7,9 @@ import * as Location from "expo-location";
 import * as TaskManager from "expo-task-manager";
 import * as SQLite from "expo-sqlite";
 import { parkingGarages } from "./staticDataParkingGarage";
+import { useGeofenceEvent } from "./helper/geofencingHook";
 
 const GEOFENCING_TASK = "GEOFENCING_TASK";
-
-TaskManager.defineTask(GEOFENCING_TASK, ({ data, error }: any) => {
-    if (error) {
-        // check `error.message` for more details.
-        return;
-    }
-    if (data.eventType === Location.GeofencingEventType.Enter) {
-        // console.log("You've entered region:", data.region);
-    } else if (data.eventType === Location.GeofencingEventType.Exit) {
-        // console.log("You've left region:", data.region);
-    }
-});
 
 const db = SQLite.openDatabase("db.ParkingGarages"); // returns Database object
 
@@ -48,6 +37,7 @@ const populateStaticDataTable = () => {
 export default function App() {
     // const [location, setLocation] = useState<Location.LocationObject | null>(null);
     const [region, setRegion] = useState<Region | undefined>(undefined);
+    const nameAndInGeofence = useGeofenceEvent();
 
     const getAPI = () => {
         fetch("https://parken.amberg.de/wp-content/uploads/pls/pls.xml")
@@ -61,6 +51,10 @@ export default function App() {
                 console.error(error);
             });
     };
+
+    useEffect(() => {
+        console.log(nameAndInGeofence);
+    }, [nameAndInGeofence]);
 
     useEffect(() => {
         // Check if the items table exists if not create it
@@ -117,7 +111,7 @@ export default function App() {
                 latitude: garage.coords.latitude,
                 longitude: garage.coords.longitude,
                 notifyOnEnter: true,
-                radius: 500,
+                radius: 200,
             });
         });
 
