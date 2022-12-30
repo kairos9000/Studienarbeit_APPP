@@ -116,10 +116,14 @@ export default function App() {
         });
 
         if (TaskManager.isTaskDefined(GEOFENCING_TASK)) {
-            Location.startGeofencingAsync(GEOFENCING_TASK, regions);
+            Location.startLocationUpdatesAsync(GEOFENCING_TASK, {
+                accuracy: Location.LocationAccuracy.BestForNavigation,
+            });
         } else {
             setTimeout(() => {
-                Location.startGeofencingAsync(GEOFENCING_TASK, regions);
+                Location.startLocationUpdatesAsync(GEOFENCING_TASK, {
+                    accuracy: Location.LocationAccuracy.BestForNavigation,
+                });
             }, 5000);
         }
     }, []);

@@ -55,7 +55,7 @@ export function useGeofenceEvent() {
 
         geofenceHandles.push(handleIsInGeofence);
         return () => {
-            geofenceHandles = geofenceHandles.filter((e: any) => e !== handleIsInGeofence);
+            geofenceHandles = geofenceHandles.filter((handle) => handle !== handleIsInGeofence);
         };
     }, []);
 
