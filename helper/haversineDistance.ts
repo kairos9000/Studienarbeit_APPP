@@ -26,4 +26,4 @@ function degToRadians(degree: number) {
     return (degree * Math.PI) / 180;
 }
 
-console.log(haversineDistance({ latitude: 49.402, longitude: 11.9796 }, { latitude: 49.3762, longitude: 11.9809 }));
+// console.log(haversineDistance({ latitude: 49.402, longitude: 11.9796 }, { latitude: 49.3762, longitude: 11.9809 }));

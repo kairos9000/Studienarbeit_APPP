@@ -53,36 +53,34 @@ export default function App() {
     };
 
     useEffect(() => {
-        console.log(nameAndInGeofence);
-    }, [nameAndInGeofence]);
+        nameAndInGeofence.forEach((element) => {
+            console.log(element.name, element.inGeofence);
+        });
+        console.log("\n");
+    }, [JSON.stringify(nameAndInGeofence)]);
 
     useEffect(() => {
         // Check if the items table exists if not create it
-        db.transaction((tx) => {
-            tx.executeSql(
-                `CREATE TABLE IF NOT EXISTS Pricing (id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, FOREIGN KEY(garage) REFERENCES GarageStaticData(id),
-                isDayPricing INT, firstHour INT NOT NULL, followingHours INT NOT NULL, numHoursSpecialPrices INT, priceSpecialPrices INT, 
-                startHours VARCHAR(10), endHours VARCHAR(10))`
-            );
-        });
-        db.transaction((tx) => {
-            tx.executeSql(
-                `CREATE TABLE IF NOT EXISTS GarageStaticData (id INTEGER PRIMARY KEY NOT NULL, name TEXT NOT NULL, latitude REAL NOT NULL, longitude REAL NOT NULL,
-                numberOfParkingSpots INT NOT NULL, openingStartHour VARCHAR(10) NOT NULL, openingEndHour VARCHAR(10) NOT NULL, additionalInfo TEXT)`
-            );
-        });
-        db.transaction((tx) => {
-            tx.executeSql(`SELECT COUNT(*) FROM GarageStaticData`, [], (transaction, result) => {
-                if (result.rows.item(0)["COUNT(*)"] !== parkingGarages.length) {
-                    populateStaticDataTable();
-                }
-            });
-        });
-        db.transaction((tx) => {
-            tx.executeSql(`SELECT * FROM GarageStaticData`, [], (transaction, result) => {
-                console.log(result.rows);
-            });
-        });
+        // db.transaction((tx) => {
+        //     tx.executeSql(
+        //         `CREATE TABLE IF NOT EXISTS Pricing (id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, FOREIGN KEY(garage) REFERENCES GarageStaticData(id),
+        //         isDayPricing INT, firstHour INT NOT NULL, followingHours INT NOT NULL, numHoursSpecialPrices INT, priceSpecialPrices INT,
+        //         startHours VARCHAR(10), endHours VARCHAR(10))`
+        //     );
+        // });
+        // db.transaction((tx) => {
+        //     tx.executeSql(
+        //         `CREATE TABLE IF NOT EXISTS GarageStaticData (id INTEGER PRIMARY KEY NOT NULL, name TEXT NOT NULL, latitude REAL NOT NULL, longitude REAL NOT NULL,
+        //         numberOfParkingSpots INT NOT NULL, openingStartHour VARCHAR(10) NOT NULL, openingEndHour VARCHAR(10) NOT NULL, additionalInfo TEXT)`
+        //     );
+        // });
+        // db.transaction((tx) => {
+        //     tx.executeSql(`SELECT COUNT(*) FROM GarageStaticData`, [], (transaction, result) => {
+        //         if (result.rows.item(0)["COUNT(*)"] !== parkingGarages.length) {
+        //             populateStaticDataTable();
+        //         }
+        //     });
+        // });
         (async () => {
             let status = (await Location.requestForegroundPermissionsAsync()).status;
             if (status !== "granted") {
@@ -103,23 +101,26 @@ export default function App() {
             });
         })();
 
-        let regions: Location.LocationRegion[] = [];
+        // let regions: Location.LocationRegion[] = [];
 
-        parkingGarages.map((garage) => {
-            regions.push({
-                identifier: garage.name,
-                latitude: garage.coords.latitude,
-                longitude: garage.coords.longitude,
-                notifyOnEnter: true,
-                radius: 200,
-            });
-        });
+        // parkingGarages.map((garage) => {
+        //     regions.push({
+        //         identifier: garage.name,
+        //         latitude: garage.coords.latitude,
+        //         longitude: garage.coords.longitude,
+        //         notifyOnEnter: true,
+        //         radius: 200,
+        //     });
+        // });
 
         if (TaskManager.isTaskDefined(GEOFENCING_TASK)) {
             Location.startLocationUpdatesAsync(GEOFENCING_TASK, {
                 accuracy: Location.LocationAccuracy.BestForNavigation,
+                deferredUpdatesDistance: 5,
+                deferredUpdatesInterval: 500,
             });
         } else {
+            console.log("hello");
             setTimeout(() => {
                 Location.startLocationUpdatesAsync(GEOFENCING_TASK, {
                     accuracy: Location.LocationAccuracy.BestForNavigation,
