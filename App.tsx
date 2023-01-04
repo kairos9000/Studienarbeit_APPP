@@ -8,6 +8,7 @@ import * as TaskManager from "expo-task-manager";
 import * as SQLite from "expo-sqlite";
 import { parkingGarages } from "./staticDataParkingGarage";
 import { useGeofenceEvent } from "./helper/geofencingHook";
+import { RootSiblingParent } from "react-native-root-siblings";
 
 const GEOFENCING_TASK = "GEOFENCING_TASK";
 
@@ -129,19 +130,21 @@ export default function App() {
         }
     }, []);
     return (
-        <View style={styles.container}>
-            <MapView style={styles.map} showsUserLocation followsUserLocation region={region}>
-                {parkingGarages.map((garage) => (
-                    <Marker
-                        key={garage.id}
-                        coordinate={garage.coords}
-                        title={garage.name}
-                        description={garage.additionalInformation}
-                    />
-                ))}
-            </MapView>
-            <Button title="getAPI" onPress={getAPI}></Button>
-        </View>
+        <RootSiblingParent>
+            <View style={styles.container}>
+                <MapView style={styles.map} showsUserLocation followsUserLocation region={region}>
+                    {parkingGarages.map((garage) => (
+                        <Marker
+                            key={garage.id}
+                            coordinate={garage.coords}
+                            title={garage.name}
+                            description={garage.additionalInformation}
+                        />
+                    ))}
+                </MapView>
+                <Button title="getAPI" onPress={getAPI}></Button>
+            </View>
+        </RootSiblingParent>
     );
 }
 

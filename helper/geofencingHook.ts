@@ -5,6 +5,7 @@ import { LatLng } from "react-native-maps";
 import { haversineDistance } from "./haversineDistance";
 import { parkingGarages } from "../staticDataParkingGarage";
 import * as Speech from "expo-speech";
+import Toast from "react-native-root-toast";
 
 const GEOFENCING_TASK = "GEOFENCING_TASK";
 let geofenceHandles: TaskManager.TaskManagerTaskExecutor[] = [];
@@ -29,33 +30,46 @@ TaskManager.defineTask(GEOFENCING_TASK, (data: any) => {
     // }
 });
 
-interface NameAndCoords {
+interface RegionsStaticData {
     name: string;
     coords: LatLng;
+}
+
+interface GeofenceData {
+    name: string;
     inGeofence: boolean;
 }
 
 export function useGeofenceEvent() {
-    let regionsData: NameAndCoords[] = [];
+    let regionsData: RegionsStaticData[] = [];
+    let geofenceData: GeofenceData[] = [];
 
     parkingGarages.map((garage) => {
         regionsData.push({
             name: garage.name,
             coords: garage.coords,
+        });
+        geofenceData.push({
+            name: garage.name,
             inGeofence: false,
         });
     });
-    const [regions, setRegions] = useState<NameAndCoords[]>(regionsData);
+    const [regions, setRegions] = useState<GeofenceData[]>(geofenceData);
 
     useEffect(() => {
         const handleIsInGeofence = (userCoords: any) => {
-            regions.forEach((region, index) => {
+            regionsData.forEach((region, index) => {
                 const distance = haversineDistance(userCoords, region.coords);
                 if (distance < 200) {
                     let newRegions = [...regions];
                     // wenn Nutzer vorher außerhalb des Geofences war Benachrichtigung, dass betreten wurde
                     if (newRegions[index].inGeofence === false) {
-                        Speech.speak("Sie nähern sich " + newRegions[index].name, { language: "de" });
+                        const notificationText = "Sie nähern sich " + newRegions[index].name + ".";
+                        Speech.speak(notificationText, { language: "de" });
+                        Toast.show(notificationText, {
+                            duration: Toast.durations.LONG,
+                            position: Toast.positions.BOTTOM,
+                        });
                     }
                     newRegions[index].inGeofence = true;
                     setRegions(newRegions);
