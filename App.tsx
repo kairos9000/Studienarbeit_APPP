@@ -1,7 +1,6 @@
 import * as React from "react";
-import MapView, { Marker, Region } from "react-native-maps";
+import MapView, { LatLng, Marker, Polyline, Region } from "react-native-maps";
 import { StyleSheet, Text, View, Dimensions, Button } from "react-native";
-import { XMLParser, XMLBuilder, XMLValidator } from "fast-xml-parser";
 import { useEffect, useState } from "react";
 import * as Location from "expo-location";
 import * as TaskManager from "expo-task-manager";
@@ -11,6 +10,8 @@ import { RootSiblingParent } from "react-native-root-siblings";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { IGarage } from "./IGarage";
 import { useAPIcall } from "./ParkingAPI/useAPIcall";
+import { XMLParser } from "fast-xml-parser";
+import { Altstadtring } from "./Altstadtring copy";
 
 const GEOFENCING_TASK = "GEOFENCING_TASK";
 const staticDataParkingGarage = "@staticData";
@@ -23,7 +24,7 @@ const defaultRegion = {
 };
 
 export default function App() {
-    // const [location, setLocation] = useState<Location.LocationObject | null>(null);
+    const [positions, setPositions] = useState<LatLng[]>([]);
     const [region, setRegion] = useState<Region>(defaultRegion);
     const [parkingData, setParkingData] = useState<IGarage[]>();
 
@@ -85,7 +86,25 @@ export default function App() {
                 });
             }, 5000);
         }
+
+        const parser = new XMLParser({
+            ignoreAttributes: false,
+            attributeNamePrefix: "",
+        });
+        let xml = parser.parse(Altstadtring);
+        const trackPoints = xml.gpx.trk.trkseg.trkpt;
+
+        const extractedPositions: LatLng[] = [];
+        trackPoints.forEach((trackPoint: any) => {
+            extractedPositions.push({ latitude: Number(trackPoint.lat), longitude: Number(trackPoint.lon) });
+        });
+        setPositions(extractedPositions);
     }, []);
+
+    const abortNavigation = () => {
+        setPositions([]);
+    };
+
     return (
         <RootSiblingParent>
             <View style={styles.container}>
@@ -99,7 +118,22 @@ export default function App() {
                                 description={garage.additionalInformation}
                             />
                         ))}
+
+                    <Polyline
+                        coordinates={positions}
+                        strokeColor="#4285F4" // fallback for when `strokeColors` is not supported by the map-provider
+                        strokeColors={[
+                            "#7F0000",
+                            "#00000000", // no color, creates a "long" gradient between the previous and next coordinate
+                            "#B24112",
+                            "#E5845C",
+                            "#238C23",
+                            "#7F0000",
+                        ]}
+                        strokeWidth={6}
+                    />
                 </MapView>
+                <Button title="Abbrechen" onPress={abortNavigation}></Button>
             </View>
         </RootSiblingParent>
     );
