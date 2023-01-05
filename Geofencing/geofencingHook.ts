@@ -1,13 +1,15 @@
-import * as Location from "expo-location";
 import * as TaskManager from "expo-task-manager";
 import { useEffect, useState } from "react";
 import { LatLng } from "react-native-maps";
 import { haversineDistance } from "./haversineDistance";
-import { parkingGarages } from "../staticDataParkingGarage";
 import * as Speech from "expo-speech";
 import Toast from "react-native-root-toast";
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import { IGarage } from "../IGarage";
 
 const GEOFENCING_TASK = "GEOFENCING_TASK";
+const staticDataParkingGarage = "@staticData";
+
 let geofenceHandles: TaskManager.TaskManagerTaskExecutor[] = [];
 
 TaskManager.defineTask(GEOFENCING_TASK, (data: any) => {
@@ -19,15 +21,6 @@ TaskManager.defineTask(GEOFENCING_TASK, (data: any) => {
     for (const handle of geofenceHandles) {
         handle(location.coords);
     }
-    // if (error) {
-    //     // check `error.message` for more details.
-    //     return;
-    // }
-    // if (data.eventType === Location.GeofencingEventType.Enter) {
-    //     console.log("You've entered region:", data.region);
-    // } else if (data.eventType === Location.GeofencingEventType.Exit) {
-    //     console.log("You've left region:", data.region);
-    // }
 });
 
 interface RegionsStaticData {
@@ -44,27 +37,48 @@ export function useGeofenceEvent() {
     let regionsData: RegionsStaticData[] = [];
     let geofenceData: GeofenceData[] = [];
 
-    parkingGarages.map((garage) => {
-        regionsData.push({
-            name: garage.name,
-            coords: garage.coords,
+    AsyncStorage.getItem(staticDataParkingGarage)
+        .then((garageData) => {
+            if (garageData !== null) {
+                const parkingGarages: IGarage[] = JSON.parse(garageData);
+                parkingGarages.map((garage) => {
+                    regionsData.push({
+                        name: garage.name,
+                        coords: garage.coords,
+                    });
+                    geofenceData.push({
+                        name: garage.name,
+                        inGeofence: false,
+                    });
+                });
+            } else {
+                Toast.show("Parkhausdaten konnten nicht gefunden werden", {
+                    duration: Toast.durations.LONG,
+                    position: Toast.positions.BOTTOM,
+                });
+            }
+        })
+        .catch((e) => {
+            Toast.show("Beim Laden der Parkhausdaten ist ein Fehler aufgetreten", {
+                duration: Toast.durations.LONG,
+                position: Toast.positions.BOTTOM,
+            });
         });
-        geofenceData.push({
-            name: garage.name,
-            inGeofence: false,
-        });
-    });
+
     const [regions, setRegions] = useState<GeofenceData[]>(geofenceData);
 
     useEffect(() => {
         const handleIsInGeofence = (userCoords: any) => {
+            if (regionsData.length === 0 && regions.length === 0) {
+                return;
+            }
             regionsData.forEach((region, index) => {
                 const distance = haversineDistance(userCoords, region.coords);
                 if (distance < 200) {
                     let newRegions = [...regions];
                     // wenn Nutzer vorher außerhalb des Geofences war Benachrichtigung, dass betreten wurde
                     if (newRegions[index].inGeofence === false) {
-                        const notificationText = "Sie nähern sich " + newRegions[index].name + ".";
+                        const notificationText = "Parkhaus " + newRegions[index].name + " in der Nähe.";
                         Speech.speak(notificationText, { language: "de" });
                         Toast.show(notificationText, {
                             duration: Toast.durations.LONG,
@@ -73,30 +87,15 @@ export function useGeofenceEvent() {
                     }
                     newRegions[index].inGeofence = true;
                     setRegions(newRegions);
+                    // damit Nutzer weiter weg von Parkhaus sein muss, um als außerhalb des Geofences zu gelten
+                    // => wenn hier nur auf über 200m getestet wird, kann es durch Schwankungen in den Koordinaten
+                    // des Nutzers dazu kommen, dass der Nutzer das Geofence mehrmals betritt und wieder verlässt
                 } else if (distance > 210) {
                     let newRegions = [...regions];
                     newRegions[index].inGeofence = false;
                     setRegions(newRegions);
                 }
             });
-            // if (nameAndInGeofence.inGeofence === true) {
-            //     if (
-            //         data.region.identifier === nameAndInGeofence.name &&
-            //         data.eventType === Location.GeofencingEventType.Enter
-            //     ) {
-            //         return;
-            //     }
-            // }
-
-            // if (data.eventType === Location.GeofencingEventType.Enter) {
-            //     setNameAndInGeofence({ name: data.region.identifier, inGeofence: true });
-            //     console.log("You've entered region:", data.region);
-            // } else if (data.eventType === Location.GeofencingEventType.Exit) {
-            //     setNameAndInGeofence({ name: data.region.identifier, inGeofence: false });
-            //     console.log("You've left region:", data.region);
-            // } else {
-            //     console.log("Komisches Event");
-            // }
         };
 
         geofenceHandles.push(handleIsInGeofence);

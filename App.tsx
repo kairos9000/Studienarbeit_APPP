@@ -5,53 +5,30 @@ import { XMLParser, XMLBuilder, XMLValidator } from "fast-xml-parser";
 import { useEffect, useState } from "react";
 import * as Location from "expo-location";
 import * as TaskManager from "expo-task-manager";
-import * as SQLite from "expo-sqlite";
 import { parkingGarages } from "./staticDataParkingGarage";
-import { useGeofenceEvent } from "./helper/geofencingHook";
+import { useGeofenceEvent } from "./Geofencing/geofencingHook";
 import { RootSiblingParent } from "react-native-root-siblings";
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import { IGarage } from "./IGarage";
+import { useAPIcall } from "./ParkingAPI/useAPIcall";
 
 const GEOFENCING_TASK = "GEOFENCING_TASK";
+const staticDataParkingGarage = "@staticData";
 
-const db = SQLite.openDatabase("db.ParkingGarages"); // returns Database object
-
-const populateStaticDataTable = () => {
-    parkingGarages.map((garage) => {
-        db.transaction((tx) => {
-            tx.executeSql(
-                `INSERT INTO GarageStaticData
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
-                [
-                    garage.id,
-                    garage.name,
-                    garage.coords.latitude,
-                    garage.coords.longitude,
-                    garage.numberOfParkingSpots,
-                    garage.openingHours.startHour,
-                    garage.openingHours.endHour,
-                    garage.additionalInformation ? garage.additionalInformation : null,
-                ]
-            );
-        });
-    });
+const defaultRegion = {
+    latitude: 49.44594,
+    longitude: 11.85664,
+    latitudeDelta: 0.03,
+    longitudeDelta: 0.03,
 };
 
 export default function App() {
     // const [location, setLocation] = useState<Location.LocationObject | null>(null);
-    const [region, setRegion] = useState<Region | undefined>(undefined);
-    const nameAndInGeofence = useGeofenceEvent();
+    const [region, setRegion] = useState<Region>(defaultRegion);
+    const [parkingData, setParkingData] = useState<IGarage[]>();
 
-    const getAPI = () => {
-        fetch("https://parken.amberg.de/wp-content/uploads/pls/pls.xml")
-            .then((response) => response.text())
-            .then((text) => {
-                const parser = new XMLParser();
-                let xml = parser.parse(text);
-                console.log(xml.Daten.Parkhaus);
-            })
-            .catch((error) => {
-                console.error(error);
-            });
-    };
+    const nameAndInGeofence = useGeofenceEvent();
+    const dynamicParkingData = useAPIcall();
 
     useEffect(() => {
         nameAndInGeofence.forEach((element) => {
@@ -61,27 +38,20 @@ export default function App() {
     }, [JSON.stringify(nameAndInGeofence)]);
 
     useEffect(() => {
-        // Check if the items table exists if not create it
-        // db.transaction((tx) => {
-        //     tx.executeSql(
-        //         `CREATE TABLE IF NOT EXISTS Pricing (id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, FOREIGN KEY(garage) REFERENCES GarageStaticData(id),
-        //         isDayPricing INT, firstHour INT NOT NULL, followingHours INT NOT NULL, numHoursSpecialPrices INT, priceSpecialPrices INT,
-        //         startHours VARCHAR(10), endHours VARCHAR(10))`
-        //     );
-        // });
-        // db.transaction((tx) => {
-        //     tx.executeSql(
-        //         `CREATE TABLE IF NOT EXISTS GarageStaticData (id INTEGER PRIMARY KEY NOT NULL, name TEXT NOT NULL, latitude REAL NOT NULL, longitude REAL NOT NULL,
-        //         numberOfParkingSpots INT NOT NULL, openingStartHour VARCHAR(10) NOT NULL, openingEndHour VARCHAR(10) NOT NULL, additionalInfo TEXT)`
-        //     );
-        // });
-        // db.transaction((tx) => {
-        //     tx.executeSql(`SELECT COUNT(*) FROM GarageStaticData`, [], (transaction, result) => {
-        //         if (result.rows.item(0)["COUNT(*)"] !== parkingGarages.length) {
-        //             populateStaticDataTable();
-        //         }
-        //     });
-        // });
+        console.log(dynamicParkingData);
+    }, [dynamicParkingData]);
+
+    useEffect(() => {
+        (async () => {
+            let parkingGaragesTest = await AsyncStorage.getItem(staticDataParkingGarage);
+            if (parkingGaragesTest === null) {
+                await AsyncStorage.setItem(staticDataParkingGarage, JSON.stringify(parkingGarages));
+                parkingGaragesTest = await AsyncStorage.getItem(staticDataParkingGarage);
+            }
+            const garageObject = parkingGaragesTest !== null ? (JSON.parse(parkingGaragesTest) as IGarage[]) : [];
+            setParkingData(garageObject);
+        })();
+
         (async () => {
             let status = (await Location.requestForegroundPermissionsAsync()).status;
             if (status !== "granted") {
@@ -97,22 +67,10 @@ export default function App() {
             setRegion({
                 latitude: location.coords.latitude,
                 longitude: location.coords.longitude,
-                latitudeDelta: 0.04,
-                longitudeDelta: 0.04,
+                latitudeDelta: 0.03,
+                longitudeDelta: 0.03,
             });
         })();
-
-        // let regions: Location.LocationRegion[] = [];
-
-        // parkingGarages.map((garage) => {
-        //     regions.push({
-        //         identifier: garage.name,
-        //         latitude: garage.coords.latitude,
-        //         longitude: garage.coords.longitude,
-        //         notifyOnEnter: true,
-        //         radius: 200,
-        //     });
-        // });
 
         if (TaskManager.isTaskDefined(GEOFENCING_TASK)) {
             Location.startLocationUpdatesAsync(GEOFENCING_TASK, {
@@ -121,7 +79,6 @@ export default function App() {
                 deferredUpdatesInterval: 500,
             });
         } else {
-            console.log("hello");
             setTimeout(() => {
                 Location.startLocationUpdatesAsync(GEOFENCING_TASK, {
                     accuracy: Location.LocationAccuracy.BestForNavigation,
@@ -133,16 +90,16 @@ export default function App() {
         <RootSiblingParent>
             <View style={styles.container}>
                 <MapView style={styles.map} showsUserLocation followsUserLocation region={region}>
-                    {parkingGarages.map((garage) => (
-                        <Marker
-                            key={garage.id}
-                            coordinate={garage.coords}
-                            title={garage.name}
-                            description={garage.additionalInformation}
-                        />
-                    ))}
+                    {parkingData !== undefined &&
+                        parkingData.map((garage) => (
+                            <Marker
+                                key={garage.id}
+                                coordinate={garage.coords}
+                                title={garage.name}
+                                description={garage.additionalInformation}
+                            />
+                        ))}
                 </MapView>
-                <Button title="getAPI" onPress={getAPI}></Button>
             </View>
         </RootSiblingParent>
     );
@@ -158,8 +115,5 @@ const styles = StyleSheet.create({
     map: {
         width: Dimensions.get("window").width,
         height: Dimensions.get("window").height - 100,
-    },
-    button: {
-        flex: 1,
     },
 });
