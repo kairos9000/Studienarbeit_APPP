@@ -11,7 +11,7 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import { IGarage } from "./IGarage";
 import { useAPIcall } from "./ParkingAPI/useAPIcall";
 import { Directions } from "./Directions";
-import { NavigationContainer } from "@react-navigation/native";
+import { NavigationContainer, ParamListBase, RouteProp } from "@react-navigation/native";
 
 const GEOFENCING_TASK = "GEOFENCING_TASK";
 const staticDataParkingGarage = "@staticData";
@@ -23,13 +23,21 @@ const defaultRegion = {
     longitudeDelta: 0.03,
 };
 
-export default function Map() {
+interface IProps {
+    route: RouteProp<ParamListBase, "Karte">;
+    navigation: any;
+    volume: boolean;
+    mapsOn: boolean;
+}
+
+export default function Map(props: IProps) {
+    const { route, navigation, volume, mapsOn } = props;
     const [positions, setPositions] = useState<LatLng[]>([]);
     const [region, setRegion] = useState<Region>(defaultRegion);
     const [parkingData, setParkingData] = useState<IGarage[]>();
     const [showDirections, setShowDirections] = useState<LatLng>({ latitude: 0, longitude: 0 });
 
-    const nameAndInGeofence = useGeofenceEvent();
+    const nameAndInGeofence = useGeofenceEvent(volume);
     const dynamicParkingData = useAPIcall();
 
     useEffect(() => {
@@ -89,6 +97,10 @@ export default function Map() {
         }
     }, []);
 
+    useEffect(() => {
+        setShowDirections({ latitude: 0, longitude: 0 });
+    }, [mapsOn]);
+
     const abortNavigation = () => {
         setShowDirections({ latitude: 0, longitude: 0 });
     };
@@ -115,10 +127,14 @@ export default function Map() {
                         />
                     ))}
 
-                <Directions userCoords={showDirections} resetNavigation={resetNavigation}></Directions>
+                <Directions
+                    alwaysUseMaps={mapsOn}
+                    userCoords={showDirections}
+                    resetNavigation={resetNavigation}
+                ></Directions>
             </MapView>
-            {/* <Button title="Starten" onPress={startNavigation}></Button>
-            <Button title="Abbrechen" onPress={abortNavigation}></Button> */}
+            <Button title="Starten" onPress={startNavigation}></Button>
+            <Button title="Abbrechen" onPress={abortNavigation}></Button>
         </View>
     );
 }

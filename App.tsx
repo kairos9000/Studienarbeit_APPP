@@ -7,16 +7,44 @@ import Map from "./Map";
 import ParkingList from "./ParkingList";
 import Ionicons from "@expo/vector-icons/Ionicons";
 import { colors } from "./colors";
-import { useState } from "react";
+import { createContext, useEffect, useState } from "react";
 import { Divider, Menu, Provider } from "react-native-paper";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 
 const Tab = createMaterialTopTabNavigator();
 const googleMapsOffIcon = require("./assets/google-maps-off.png");
+const settingsDataVolume = "@settingsDataVolume";
+const settingsDataMaps = "@settingsDataMaps";
 
 export default function App() {
     const [showMenu, setShowMenu] = useState<boolean>(false);
     const [volumeOn, setVolumeOn] = useState<boolean>(true);
     const [mapsOn, setMapsOn] = useState<boolean>(false);
+
+    useEffect(() => {
+        // weil async/await warten würde und damit die anderen useEffects ausgeführt werden und die
+        // Werte von volumeOn oder mapsOn verändern, bevor sie ausgelesen werden
+        // => then macht sofort weiter und fügt das Auslesen von settingsVolumeMaps an
+        // die callback-chain => Variablen werden ausgelesen, bevor sie verändert werden können
+        AsyncStorage.getItem(settingsDataVolume).then((value) => {
+            if (value !== null) {
+                setVolumeOn(JSON.parse(value));
+            }
+        });
+        AsyncStorage.getItem(settingsDataMaps).then((value) => {
+            if (value !== null) {
+                setMapsOn(JSON.parse(value));
+            }
+        });
+    }, []);
+
+    useEffect(() => {
+        AsyncStorage.setItem(settingsDataVolume, JSON.stringify(volumeOn));
+    }, [volumeOn]);
+
+    useEffect(() => {
+        AsyncStorage.setItem(settingsDataMaps, JSON.stringify(mapsOn));
+    }, [mapsOn]);
 
     return (
         <Provider>
@@ -35,7 +63,7 @@ export default function App() {
                                     onPress={() => setShowMenu(true)}
                                     android_ripple={{ color: colors.fontGray, radius: 20 }}
                                 >
-                                    <Ionicons name="ios-reorder-three" size={40} color={colors.primaryBackground} />
+                                    <Ionicons name="menu" size={40} color={colors.primaryBackground} />
                                 </Pressable>
                             }
                         >
@@ -58,14 +86,13 @@ export default function App() {
                         screenOptions={{
                             tabBarActiveTintColor: colors.primaryBackground,
                             tabBarInactiveTintColor: colors.fontGray,
-                            // tabBarContentContainerStyle: { backgroundColor: colors.background },
                             tabBarStyle: { backgroundColor: colors.background },
                             tabBarIndicatorStyle: { backgroundColor: colors.primaryBackground },
                         }}
                     >
                         <Tab.Screen
                             name="Karte"
-                            component={Map}
+                            children={(props) => <Map volume={volumeOn} mapsOn={mapsOn} {...props} />}
                             options={{
                                 tabBarLabel: "Karte",
                                 tabBarIcon: ({ color }) => <Ionicons name="map" size={25} color={color} />,
@@ -101,7 +128,7 @@ const styles = StyleSheet.create({
     },
     settingsContainer: {
         position: "absolute",
-        right: 15,
+        right: 17,
         top: 33,
         borderRadius: 30,
     },

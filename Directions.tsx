@@ -10,6 +10,7 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import { IGarage } from "./IGarage";
 
 interface IProps {
+    alwaysUseMaps: boolean;
     userCoords: LatLng;
     resetNavigation(): void;
 }
@@ -22,7 +23,7 @@ const parser = new XMLParser({
 const staticDataParkingGarage = "@staticData";
 
 export function Directions(props: IProps) {
-    const { userCoords, resetNavigation } = props;
+    const { alwaysUseMaps, userCoords, resetNavigation } = props;
     const [directions, setDirections] = useState<LatLng[]>([]);
 
     const findCorrectGpxFile = (coords: LatLng) => {
@@ -53,7 +54,10 @@ export function Directions(props: IProps) {
 
     useEffect(() => {
         if (userCoords.latitude !== 0 && userCoords.longitude !== 0) {
-            const correctFile = findCorrectGpxFile(userCoords);
+            let correctFile = null;
+            if (alwaysUseMaps === false) {
+                correctFile = findCorrectGpxFile(userCoords);
+            }
 
             if (correctFile === null) {
                 AsyncStorage.getItem(staticDataParkingGarage).then((garageData) => {

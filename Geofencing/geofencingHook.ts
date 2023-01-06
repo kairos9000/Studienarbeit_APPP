@@ -33,7 +33,7 @@ interface GeofenceData {
     inGeofence: boolean;
 }
 
-export function useGeofenceEvent() {
+export function useGeofenceEvent(volume: boolean) {
     let regionsData: RegionsStaticData[] = [];
     let geofenceData: GeofenceData[] = [];
 
@@ -79,7 +79,10 @@ export function useGeofenceEvent() {
                     // wenn Nutzer vorher außerhalb des Geofences war Benachrichtigung, dass betreten wurde
                     if (newRegions[index].inGeofence === false) {
                         const notificationText = "Parkhaus " + newRegions[index].name + " in der Nähe.";
-                        Speech.speak(notificationText, { language: "de" });
+                        if (volume === true) {
+                            Speech.speak(notificationText, { language: "de" });
+                        }
+
                         Toast.show(notificationText, {
                             duration: Toast.durations.LONG,
                             position: Toast.positions.BOTTOM,
@@ -102,7 +105,7 @@ export function useGeofenceEvent() {
         return () => {
             geofenceHandles = geofenceHandles.filter((handle) => handle !== handleIsInGeofence);
         };
-    }, []);
+    }, [volume]);
 
     return regions;
 }
