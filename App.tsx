@@ -1,153 +1,108 @@
 import * as React from "react";
-import MapView, { LatLng, Marker, Polyline, Region } from "react-native-maps";
-import { StyleSheet, Text, View, Dimensions, Button } from "react-native";
-import { useEffect, useState } from "react";
-import * as Location from "expo-location";
-import * as TaskManager from "expo-task-manager";
-import { parkingGarages } from "./staticDataParkingGarage";
-import { useGeofenceEvent } from "./Geofencing/geofencingHook";
+import { StyleSheet, Text, View, Dimensions, Button, Pressable } from "react-native";
 import { RootSiblingParent } from "react-native-root-siblings";
-import AsyncStorage from "@react-native-async-storage/async-storage";
-import { IGarage } from "./IGarage";
-import { useAPIcall } from "./ParkingAPI/useAPIcall";
-import { XMLParser } from "fast-xml-parser";
-import { Altstadtring } from "./Altstadtring copy";
+import { NavigationContainer } from "@react-navigation/native";
+import { createMaterialTopTabNavigator } from "@react-navigation/material-top-tabs";
+import Map from "./Map";
+import ParkingList from "./ParkingList";
+import Ionicons from "@expo/vector-icons/Ionicons";
+import { colors } from "./colors";
+import { useState } from "react";
+import { Divider, Menu, Provider } from "react-native-paper";
 
-const GEOFENCING_TASK = "GEOFENCING_TASK";
-const staticDataParkingGarage = "@staticData";
-
-const defaultRegion = {
-    latitude: 49.44594,
-    longitude: 11.85664,
-    latitudeDelta: 0.03,
-    longitudeDelta: 0.03,
-};
+const Tab = createMaterialTopTabNavigator();
+const googleMapsOffIcon = require("./assets/google-maps-off.png");
 
 export default function App() {
-    const [positions, setPositions] = useState<LatLng[]>([]);
-    const [region, setRegion] = useState<Region>(defaultRegion);
-    const [parkingData, setParkingData] = useState<IGarage[]>();
-
-    const nameAndInGeofence = useGeofenceEvent();
-    const dynamicParkingData = useAPIcall();
-
-    useEffect(() => {
-        nameAndInGeofence.forEach((element) => {
-            console.log(element.name, element.inGeofence);
-        });
-        console.log("\n");
-    }, [JSON.stringify(nameAndInGeofence)]);
-
-    useEffect(() => {
-        console.log(dynamicParkingData);
-    }, [dynamicParkingData]);
-
-    useEffect(() => {
-        (async () => {
-            let parkingGaragesTest = await AsyncStorage.getItem(staticDataParkingGarage);
-            if (parkingGaragesTest === null) {
-                await AsyncStorage.setItem(staticDataParkingGarage, JSON.stringify(parkingGarages));
-                parkingGaragesTest = await AsyncStorage.getItem(staticDataParkingGarage);
-            }
-            const garageObject = parkingGaragesTest !== null ? (JSON.parse(parkingGaragesTest) as IGarage[]) : [];
-            setParkingData(garageObject);
-        })();
-
-        (async () => {
-            let status = (await Location.requestForegroundPermissionsAsync()).status;
-            if (status !== "granted") {
-                console.error("Permission to access location was denied");
-                return;
-            }
-            status = (await Location.requestBackgroundPermissionsAsync()).status;
-            if (status !== "granted") {
-                console.error("Permission to access location was denied");
-                return;
-            }
-            let location: Location.LocationObject = await Location.getCurrentPositionAsync({});
-            setRegion({
-                latitude: location.coords.latitude,
-                longitude: location.coords.longitude,
-                latitudeDelta: 0.03,
-                longitudeDelta: 0.03,
-            });
-        })();
-
-        if (TaskManager.isTaskDefined(GEOFENCING_TASK)) {
-            Location.startLocationUpdatesAsync(GEOFENCING_TASK, {
-                accuracy: Location.LocationAccuracy.BestForNavigation,
-                deferredUpdatesDistance: 5,
-                deferredUpdatesInterval: 500,
-            });
-        } else {
-            setTimeout(() => {
-                Location.startLocationUpdatesAsync(GEOFENCING_TASK, {
-                    accuracy: Location.LocationAccuracy.BestForNavigation,
-                });
-            }, 5000);
-        }
-
-        const parser = new XMLParser({
-            ignoreAttributes: false,
-            attributeNamePrefix: "",
-        });
-        let xml = parser.parse(Altstadtring);
-        const trackPoints = xml.gpx.trk.trkseg.trkpt;
-
-        const extractedPositions: LatLng[] = [];
-        trackPoints.forEach((trackPoint: any) => {
-            extractedPositions.push({ latitude: Number(trackPoint.lat), longitude: Number(trackPoint.lon) });
-        });
-        setPositions(extractedPositions);
-    }, []);
-
-    const abortNavigation = () => {
-        setPositions([]);
-    };
+    const [showMenu, setShowMenu] = useState<boolean>(false);
+    const [volumeOn, setVolumeOn] = useState<boolean>(true);
+    const [mapsOn, setMapsOn] = useState<boolean>(false);
 
     return (
-        <RootSiblingParent>
-            <View style={styles.container}>
-                <MapView style={styles.map} showsUserLocation followsUserLocation region={region}>
-                    {parkingData !== undefined &&
-                        parkingData.map((garage) => (
-                            <Marker
-                                key={garage.id}
-                                coordinate={garage.coords}
-                                title={garage.name}
-                                description={garage.additionalInformation}
+        <Provider>
+            <NavigationContainer>
+                <RootSiblingParent>
+                    <View style={styles.container}>
+                        <Text style={styles.text}>Parken in Amberg</Text>
+                    </View>
+                    <View style={styles.settingsContainer}>
+                        <Menu
+                            visible={showMenu}
+                            onDismiss={() => setShowMenu(false)}
+                            anchorPosition="bottom"
+                            anchor={
+                                <Pressable
+                                    onPress={() => setShowMenu(true)}
+                                    android_ripple={{ color: colors.fontGray, radius: 20 }}
+                                >
+                                    <Ionicons name="ios-reorder-three" size={40} color={colors.primaryBackground} />
+                                </Pressable>
+                            }
+                        >
+                            <Menu.Item
+                                onPress={() => setVolumeOn(!volumeOn)}
+                                title="Ton an/aus"
+                                leadingIcon={volumeOn ? "volume-high" : "volume-off"}
                             />
-                        ))}
+                            <Divider />
+                            <Menu.Item
+                                onPress={() => setMapsOn(!mapsOn)}
+                                title="Immer Google Maps nutzen"
+                                leadingIcon={mapsOn ? "google-maps" : googleMapsOffIcon}
+                            />
+                        </Menu>
+                    </View>
 
-                    <Polyline
-                        coordinates={positions}
-                        strokeColor="#4285F4" // fallback for when `strokeColors` is not supported by the map-provider
-                        strokeColors={[
-                            "#7F0000",
-                            "#00000000", // no color, creates a "long" gradient between the previous and next coordinate
-                            "#B24112",
-                            "#E5845C",
-                            "#238C23",
-                            "#7F0000",
-                        ]}
-                        strokeWidth={6}
-                    />
-                </MapView>
-                <Button title="Abbrechen" onPress={abortNavigation}></Button>
-            </View>
-        </RootSiblingParent>
+                    <Tab.Navigator
+                        initialRouteName="Karte"
+                        screenOptions={{
+                            tabBarActiveTintColor: colors.primaryBackground,
+                            tabBarInactiveTintColor: colors.fontGray,
+                            // tabBarContentContainerStyle: { backgroundColor: colors.background },
+                            tabBarStyle: { backgroundColor: colors.background },
+                            tabBarIndicatorStyle: { backgroundColor: colors.primaryBackground },
+                        }}
+                    >
+                        <Tab.Screen
+                            name="Karte"
+                            component={Map}
+                            options={{
+                                tabBarLabel: "Karte",
+                                tabBarIcon: ({ color }) => <Ionicons name="map" size={25} color={color} />,
+                            }}
+                        />
+                        <Tab.Screen
+                            name="Liste"
+                            component={ParkingList}
+                            options={{
+                                tabBarLabel: "Liste",
+                                tabBarIcon: ({ color }) => <Ionicons name="list" size={25} color={color} />,
+                            }}
+                        />
+                    </Tab.Navigator>
+                </RootSiblingParent>
+            </NavigationContainer>
+        </Provider>
     );
 }
 
 const styles = StyleSheet.create({
     container: {
-        flex: 1,
-        backgroundColor: "#fff",
-        alignItems: "center",
-        justifyContent: "center",
+        flex: 0.1,
+        backgroundColor: colors.background,
+        alignItems: "flex-end",
+        justifyContent: "space-around",
+        flexDirection: "row",
     },
-    map: {
-        width: Dimensions.get("window").width,
-        height: Dimensions.get("window").height - 100,
+    text: {
+        fontSize: 25,
+        alignItems: "center",
+        fontFamily: "serif",
+    },
+    settingsContainer: {
+        position: "absolute",
+        right: 15,
+        top: 33,
+        borderRadius: 30,
     },
 });
