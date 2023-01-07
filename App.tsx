@@ -10,8 +10,12 @@ import { colors } from "./colors";
 import { createContext, useEffect, useState } from "react";
 import { Divider, Menu, Provider } from "react-native-paper";
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import { ParkingListDetails } from "./ParkingListDetails";
+import { createNativeStackNavigator } from "@react-navigation/native-stack";
+import ParkingListNavigator from "./ParkingListNavigator";
 
 const Tab = createMaterialTopTabNavigator();
+const Stack = createNativeStackNavigator();
 const googleMapsOffIcon = require("./assets/google-maps-off.png");
 const settingsDataVolume = "@settingsDataVolume";
 const settingsDataMaps = "@settingsDataMaps";
@@ -48,8 +52,8 @@ export default function App() {
 
     return (
         <Provider>
-            <NavigationContainer>
-                <RootSiblingParent>
+            <RootSiblingParent>
+                <NavigationContainer>
                     <View style={styles.container}>
                         <Text style={styles.text}>Parken in Amberg</Text>
                     </View>
@@ -100,15 +104,15 @@ export default function App() {
                         />
                         <Tab.Screen
                             name="Liste"
-                            component={ParkingList}
+                            component={ParkingListNavigator}
                             options={{
                                 tabBarLabel: "Liste",
                                 tabBarIcon: ({ color }) => <Ionicons name="list" size={25} color={color} />,
                             }}
                         />
                     </Tab.Navigator>
-                </RootSiblingParent>
-            </NavigationContainer>
+                </NavigationContainer>
+            </RootSiblingParent>
         </Provider>
     );
 }

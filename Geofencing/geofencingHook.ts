@@ -6,6 +6,7 @@ import * as Speech from "expo-speech";
 import Toast from "react-native-root-toast";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { IGarage } from "../IGarage";
+import { XMLData } from "../ParkingAPI/useAPIcall";
 
 const GEOFENCING_TASK = "GEOFENCING_TASK";
 const staticDataParkingGarage = "@staticData";
@@ -24,16 +25,18 @@ TaskManager.defineTask(GEOFENCING_TASK, (data: any) => {
 });
 
 interface RegionsStaticData {
+    id: number;
     name: string;
     coords: LatLng;
 }
 
 interface GeofenceData {
+    id: number;
     name: string;
     inGeofence: boolean;
 }
 
-export function useGeofenceEvent(volume: boolean) {
+export function useGeofenceEvent(volume: boolean, dynamicParkingData: XMLData) {
     let regionsData: RegionsStaticData[] = [];
     let geofenceData: GeofenceData[] = [];
 
@@ -43,10 +46,12 @@ export function useGeofenceEvent(volume: boolean) {
                 const parkingGarages: IGarage[] = JSON.parse(garageData);
                 parkingGarages.map((garage) => {
                     regionsData.push({
+                        id: garage.id,
                         name: garage.name,
                         coords: garage.coords,
                     });
                     geofenceData.push({
+                        id: garage.id,
                         name: garage.name,
                         inGeofence: false,
                     });
@@ -78,7 +83,14 @@ export function useGeofenceEvent(volume: boolean) {
                     let newRegions = [...regions];
                     // wenn Nutzer vorher außerhalb des Geofences war Benachrichtigung, dass betreten wurde
                     if (newRegions[index].inGeofence === false) {
-                        const notificationText = "Parkhaus " + newRegions[index].name + " in der Nähe.";
+                        const dynamicData = dynamicParkingData.Parkhaus.find((data) => data.ID === region.id);
+                        let notificationText = "Parkhaus " + newRegions[index].name + " in der Nähe.";
+
+                        if (dynamicData !== undefined) {
+                            let notificationWithFreeSpaces = notificationText.substring(0, notificationText.length - 1);
+                            notificationWithFreeSpaces += " mit " + dynamicData.Frei + " freien Parkplätzen.";
+                            notificationText = notificationWithFreeSpaces;
+                        }
                         if (volume === true) {
                             Speech.speak(notificationText, { language: "de" });
                         }
@@ -105,7 +117,7 @@ export function useGeofenceEvent(volume: boolean) {
         return () => {
             geofenceHandles = geofenceHandles.filter((handle) => handle !== handleIsInGeofence);
         };
-    }, [volume]);
+    }, [volume, dynamicParkingData]);
 
     return regions;
 }

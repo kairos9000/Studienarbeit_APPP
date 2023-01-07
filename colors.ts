@@ -7,4 +7,6 @@ export const colors = {
     primaryBackground: "#0C8878",
     primary: "#FCC02C",
     secondary: "#FFA57E",
+    red: "#ea0f0a",
+    openGreen: "#7fc23c",
 };

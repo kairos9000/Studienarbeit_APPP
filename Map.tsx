@@ -37,8 +37,8 @@ export default function Map(props: IProps) {
     const [parkingData, setParkingData] = useState<IGarage[]>();
     const [showDirections, setShowDirections] = useState<LatLng>({ latitude: 0, longitude: 0 });
 
-    const nameAndInGeofence = useGeofenceEvent(volume);
-    const dynamicParkingData = useAPIcall();
+    const dynamicParkingData = useAPIcall(true);
+    const nameAndInGeofence = useGeofenceEvent(volume, dynamicParkingData);
 
     useEffect(() => {
         // nameAndInGeofence.forEach((element) => {

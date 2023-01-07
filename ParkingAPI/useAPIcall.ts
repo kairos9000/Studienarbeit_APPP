@@ -6,7 +6,7 @@ import Toast from "react-native-root-toast";
 
 const dynamicDataParkingGarage = "@dynamicData";
 
-interface XMLData {
+export interface XMLData {
     Zeitstempel: number;
     Parkhaus: DynamicParkingData[];
 }
@@ -22,7 +22,7 @@ interface DynamicParkingData {
     Trend: number;
 }
 
-const getAPI = () => {
+const getAPI = (showToasts: boolean) => {
     return fetch("https://parken.amberg.de/wp-content/uploads/pls/pls.xml")
         .then((response) => {
             if (response.status === 200) {
@@ -33,7 +33,7 @@ const getAPI = () => {
         })
         .then(async (text) => {
             if (text === undefined) {
-                const oldParkingData: XMLData = await getOldParkingData();
+                const oldParkingData: XMLData = await getOldParkingData(showToasts);
                 return oldParkingData;
             } else {
                 const parser = new XMLParser();
@@ -45,28 +45,35 @@ const getAPI = () => {
                 };
 
                 await AsyncStorage.setItem(dynamicDataParkingGarage, JSON.stringify(parkingData));
-                Toast.show("Daten wurden aktualisiert.");
+                if (showToasts) {
+                    Toast.show("Daten wurden aktualisiert.");
+                }
                 return parkingData;
             }
         })
         .catch(async () => {
-            const oldParkingData: XMLData = await getOldParkingData();
+            const oldParkingData: XMLData = await getOldParkingData(showToasts);
             return oldParkingData;
         });
 };
 
-const getOldParkingData = async () => {
+const getOldParkingData = async (showToasts: boolean) => {
     const oldParkingDataTest = await AsyncStorage.getItem(dynamicDataParkingGarage);
 
     if (oldParkingDataTest === null) {
-        Toast.show(
-            "Neue Daten konnten nicht abgefragt werden!\n" +
-                "Keine alten Daten vorhanden.\n" +
-                "Bitte Internetverbindung prüfen."
-        );
+        if (showToasts) {
+            Toast.show(
+                "Neue Daten konnten nicht abgefragt werden!\n" +
+                    "Keine alten Daten vorhanden.\n" +
+                    "Bitte Internetverbindung prüfen."
+            );
+        }
+
         return { Zeitstempel: 0, Parkhaus: [] };
     } else {
-        Toast.show("Neue Daten konnten nicht abgefragt werden!\n" + "Alte Daten werden verwendet.");
+        if (showToasts) {
+            Toast.show("Neue Daten konnten nicht abgefragt werden!\n" + "Alte Daten werden verwendet.");
+        }
         const oldParkingData: XMLData = JSON.parse(oldParkingDataTest);
         return oldParkingData;
     }
@@ -83,12 +90,12 @@ const decodeHTMLEntities = (xmlObject: DynamicParkingData[]) => {
     return xmlObject;
 };
 
-export function useAPIcall() {
+export function useAPIcall(showToasts: boolean) {
     const [dynamicParkingData, setDynamicParkingData] = useState<XMLData>({ Zeitstempel: 0, Parkhaus: [] });
 
     useEffect(() => {
         const updateParkingData = async () => {
-            const parkingData = await getAPI();
+            const parkingData = await getAPI(showToasts);
             setDynamicParkingData(parkingData);
         };
 
