@@ -13,17 +13,20 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import { ParkingListDetails } from "./ParkingListDetails";
 import { createNativeStackNavigator } from "@react-navigation/native-stack";
 import ParkingListNavigator from "./ParkingListNavigator";
+import { IGarage } from "./IGarage";
+import { parkingGarages } from "./staticDataParkingGarage";
 
 const Tab = createMaterialTopTabNavigator();
-const Stack = createNativeStackNavigator();
 const googleMapsOffIcon = require("./assets/google-maps-off.png");
 const settingsDataVolume = "@settingsDataVolume";
 const settingsDataMaps = "@settingsDataMaps";
+const staticDataParkingGarage = "@staticData";
 
 export default function App() {
     const [showMenu, setShowMenu] = useState<boolean>(false);
     const [volumeOn, setVolumeOn] = useState<boolean>(true);
     const [mapsOn, setMapsOn] = useState<boolean>(false);
+    const [staticParkingData, setStaticParkingData] = useState<IGarage[]>([]);
 
     useEffect(() => {
         // weil async/await warten würde und damit die anderen useEffects ausgeführt werden und die
@@ -40,6 +43,16 @@ export default function App() {
                 setMapsOn(JSON.parse(value));
             }
         });
+
+        (async () => {
+            let parkingGaragesTest = await AsyncStorage.getItem(staticDataParkingGarage);
+            if (parkingGaragesTest === null) {
+                await AsyncStorage.setItem(staticDataParkingGarage, JSON.stringify(parkingGarages));
+                parkingGaragesTest = await AsyncStorage.getItem(staticDataParkingGarage);
+            }
+            const garageObject = parkingGaragesTest !== null ? (JSON.parse(parkingGaragesTest) as IGarage[]) : [];
+            setStaticParkingData(garageObject);
+        })();
     }, []);
 
     useEffect(() => {
@@ -96,7 +109,14 @@ export default function App() {
                     >
                         <Tab.Screen
                             name="Karte"
-                            children={(props) => <Map volume={volumeOn} mapsOn={mapsOn} {...props} />}
+                            children={(props) => (
+                                <Map
+                                    staticParkingData={staticParkingData}
+                                    volume={volumeOn}
+                                    mapsOn={mapsOn}
+                                    {...props}
+                                />
+                            )}
                             options={{
                                 tabBarLabel: "Karte",
                                 tabBarIcon: ({ color }) => <Ionicons name="map" size={25} color={color} />,
@@ -104,7 +124,9 @@ export default function App() {
                         />
                         <Tab.Screen
                             name="Liste"
-                            component={ParkingListNavigator}
+                            children={(props) => (
+                                <ParkingListNavigator staticParkingData={staticParkingData} {...props} />
+                            )}
                             options={{
                                 tabBarLabel: "Liste",
                                 tabBarIcon: ({ color }) => <Ionicons name="list" size={25} color={color} />,

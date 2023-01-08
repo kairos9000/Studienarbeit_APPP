@@ -1,28 +1,10 @@
 import * as React from "react";
-import {
-    StyleSheet,
-    Text,
-    View,
-    Dimensions,
-    Button,
-    TouchableOpacity,
-    FlatList,
-    TouchableHighlight,
-    StatusBar,
-} from "react-native";
-import { useAPIcall } from "./ParkingAPI/useAPIcall";
-import { createNativeStackNavigator } from "@react-navigation/native-stack";
+import { StyleSheet, View, FlatList } from "react-native";
+import { DynamicParkingData } from "./ParkingAPI/useAPIcall";
 import { useEffect, useState } from "react";
 import { colors } from "./colors";
 import { IGarage } from "./IGarage";
-import AsyncStorage from "@react-native-async-storage/async-storage";
-import { parkingGarages } from "./staticDataParkingGarage";
 import { ParkingListItem } from "./ParkingListItem";
-import { NavigationContainer } from "@react-navigation/native";
-import { ParkingListDetails } from "./ParkingListDetails";
-
-const staticDataParkingGarage = "@staticData";
-const Stack = createNativeStackNavigator();
 
 interface ItemInformation {
     id: number;
@@ -31,43 +13,31 @@ interface ItemInformation {
     open: number;
 }
 
-export default function ParkingList({ navigation }: any) {
+export default function ParkingList({ navigation, dynamicParkingData, staticParkingData }: any) {
     const [listData, setListData] = useState<ItemInformation[]>([]);
-    const [staticParkingData, setStaticParkingData] = useState<IGarage[]>([]);
-    const dynamicParkingData = useAPIcall(false);
 
     useEffect(() => {
-        (async () => {
-            let parkingGaragesTest = await AsyncStorage.getItem(staticDataParkingGarage);
-            if (parkingGaragesTest === null) {
-                await AsyncStorage.setItem(staticDataParkingGarage, JSON.stringify(parkingGarages));
-                parkingGaragesTest = await AsyncStorage.getItem(staticDataParkingGarage);
+        let listDataBuffer: ItemInformation[] = [];
+        staticParkingData.forEach((garage: IGarage) => {
+            const dynamicData = dynamicParkingData.Parkhaus.find((data: DynamicParkingData) => data.ID === garage.id);
+            if (dynamicData !== undefined) {
+                listDataBuffer.push({
+                    id: garage.id,
+                    name: garage.name,
+                    trend: dynamicData.Trend,
+                    open: dynamicData.Geschlossen,
+                });
             }
-            const garageObject = parkingGaragesTest !== null ? (JSON.parse(parkingGaragesTest) as IGarage[]) : [];
-            setStaticParkingData(garageObject);
+        });
 
-            let listDataBuffer: ItemInformation[] = [];
-            garageObject.forEach((garage) => {
-                const dynamicData = dynamicParkingData.Parkhaus.find((data) => data.ID === garage.id);
-                if (dynamicData !== undefined) {
-                    listDataBuffer.push({
-                        id: garage.id,
-                        name: garage.name,
-                        trend: dynamicData.Trend,
-                        open: dynamicData.Geschlossen,
-                    });
-                }
-            });
-
-            setListData(listDataBuffer);
-        })();
+        setListData(listDataBuffer);
     }, []);
 
     useEffect(() => {
         if (staticParkingData.length > 0) {
             let listDataBuffer: ItemInformation[] = [];
-            dynamicParkingData.Parkhaus.forEach((garage) => {
-                const staticData = staticParkingData.find((data) => garage.ID === data.id);
+            dynamicParkingData.Parkhaus.forEach((garage: DynamicParkingData) => {
+                const staticData = staticParkingData.find((data: IGarage) => garage.ID === data.id);
                 if (staticData !== undefined) {
                     listDataBuffer.push({
                         id: staticData.id,

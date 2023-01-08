@@ -1,41 +1,33 @@
 import * as React from "react";
-import {
-    StyleSheet,
-    Text,
-    View,
-    Dimensions,
-    Button,
-    TouchableOpacity,
-    FlatList,
-    TouchableHighlight,
-    StatusBar,
-} from "react-native";
+import { StyleSheet } from "react-native";
 import { useAPIcall } from "./ParkingAPI/useAPIcall";
-// import { createNativeStackNavigator } from "@react-navigation/native-stack";
-import { useEffect, useState } from "react";
 import { colors } from "./colors";
-import { IGarage } from "./IGarage";
-import AsyncStorage from "@react-native-async-storage/async-storage";
-import { parkingGarages } from "./staticDataParkingGarage";
-import { ParkingListItem } from "./ParkingListItem";
-import { NavigationContainer } from "@react-navigation/native";
 import { ParkingListDetails } from "./ParkingListDetails";
 import ParkingList from "./ParkingList";
 import { createStackNavigator } from "@react-navigation/stack";
 import { Ionicons } from "@expo/vector-icons";
+import { IGarage } from "./IGarage";
 
-const staticDataParkingGarage = "@staticData";
 const Stack = createStackNavigator();
 
-export default function ParkingListNavigator({ navigation }: any) {
+export default function ParkingListNavigator({ navigation, staticParkingData }: any) {
+    const dynamicParkingData = useAPIcall();
+
     return (
         <Stack.Navigator screenOptions={{ presentation: "modal" }} initialRouteName="Parkhaus-Liste">
-            <Stack.Screen name="Parkhaus-Liste" options={{ headerShown: false }} component={ParkingList} />
-            {parkingGarages.map((garage) => (
+            <Stack.Screen name="Parkhaus-Liste" options={{ headerShown: false }}>
+                {(props) => (
+                    <ParkingList
+                        staticParkingData={staticParkingData}
+                        dynamicParkingData={dynamicParkingData}
+                        {...props}
+                    />
+                )}
+            </Stack.Screen>
+            {staticParkingData.map((garage: IGarage) => (
                 <Stack.Screen
                     name={garage.name}
                     key={garage.id}
-                    component={ParkingListDetails}
                     options={{
                         headerRight: () => (
                             <Ionicons.Button
@@ -49,7 +41,17 @@ export default function ParkingListNavigator({ navigation }: any) {
                             />
                         ),
                     }}
-                />
+                >
+                    {(props) => (
+                        <ParkingListDetails
+                            {...props}
+                            dynamicParkingData={dynamicParkingData.Parkhaus.find(
+                                (dynamicGarage) => dynamicGarage.ID === garage.id
+                            )}
+                            staticParkingData={garage}
+                        />
+                    )}
+                </Stack.Screen>
             ))}
         </Stack.Navigator>
     );

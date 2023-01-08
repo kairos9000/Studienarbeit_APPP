@@ -11,7 +11,7 @@ export interface XMLData {
     Parkhaus: DynamicParkingData[];
 }
 
-interface DynamicParkingData {
+export interface DynamicParkingData {
     Aktuell: number;
     Frei: number;
     Gesamt: number;
@@ -90,7 +90,7 @@ const decodeHTMLEntities = (xmlObject: DynamicParkingData[]) => {
     return xmlObject;
 };
 
-export function useAPIcall(showToasts: boolean) {
+export function useAPIcall(showToasts: boolean = false) {
     const [dynamicParkingData, setDynamicParkingData] = useState<XMLData>({ Zeitstempel: 0, Parkhaus: [] });
 
     useEffect(() => {

@@ -1,11 +1,27 @@
 import { TouchableOpacity, Text, StyleSheet, Dimensions, View } from "react-native";
 import { colors } from "./colors";
 import { Button } from "react-native-paper";
+import { DynamicParkingData } from "./ParkingAPI/useAPIcall";
+import { IGarage } from "./IGarage";
+import { useEffect } from "react";
 
-export function ParkingListDetails({ navigation, item, onPress, backgroundColor, textColor }: any) {
+interface IProps {
+    navigation: any;
+    dynamicParkingData: DynamicParkingData | undefined;
+    staticParkingData: IGarage;
+}
+
+export function ParkingListDetails(props: IProps) {
+    const { navigation, dynamicParkingData, staticParkingData } = props;
+
+    useEffect(() => {
+        console.log(dynamicParkingData);
+        console.log(staticParkingData);
+    }, [dynamicParkingData, staticParkingData]);
+
     return (
         <View style={styles.container}>
-            <Button onPress={() => navigation.navigate("Karte")}>Zur Karte</Button>
+            <Button onPress={() => navigation.navigate("Karte", { destinationCoords: "hello" })}>Zur Karte</Button>
         </View>
     );
 }

@@ -1,20 +1,17 @@
 import * as React from "react";
-import MapView, { LatLng, Marker, Polyline, Region } from "react-native-maps";
-import { StyleSheet, Text, View, Dimensions, Button } from "react-native";
+import MapView, { LatLng, Marker, Region } from "react-native-maps";
+import { StyleSheet, View, Dimensions, Button } from "react-native";
 import { useEffect, useState } from "react";
 import * as Location from "expo-location";
 import * as TaskManager from "expo-task-manager";
-import { parkingGarages } from "./staticDataParkingGarage";
 import { useGeofenceEvent } from "./Geofencing/geofencingHook";
-import { RootSiblingParent } from "react-native-root-siblings";
-import AsyncStorage from "@react-native-async-storage/async-storage";
 import { IGarage } from "./IGarage";
 import { useAPIcall } from "./ParkingAPI/useAPIcall";
 import { Directions } from "./Directions";
-import { NavigationContainer, ParamListBase, RouteProp } from "@react-navigation/native";
+import { ParamListBase, RouteProp } from "@react-navigation/native";
+import Toast from "react-native-root-toast";
 
 const GEOFENCING_TASK = "GEOFENCING_TASK";
-const staticDataParkingGarage = "@staticData";
 
 const defaultRegion = {
     latitude: 49.44594,
@@ -28,72 +25,60 @@ interface IProps {
     navigation: any;
     volume: boolean;
     mapsOn: boolean;
+    staticParkingData: IGarage[];
 }
 
 export default function Map(props: IProps) {
-    const { route, navigation, volume, mapsOn } = props;
+    const { route, navigation, volume, mapsOn, staticParkingData } = props;
     const [positions, setPositions] = useState<LatLng[]>([]);
     const [region, setRegion] = useState<Region>(defaultRegion);
-    const [parkingData, setParkingData] = useState<IGarage[]>();
     const [showDirections, setShowDirections] = useState<LatLng>({ latitude: 0, longitude: 0 });
 
     const dynamicParkingData = useAPIcall(true);
     const nameAndInGeofence = useGeofenceEvent(volume, dynamicParkingData);
 
     useEffect(() => {
-        // nameAndInGeofence.forEach((element) => {
-        //     console.log(element.name, element.inGeofence);
-        // });
-        // console.log("\n");
-    }, [JSON.stringify(nameAndInGeofence)]);
+        console.log(route.params);
+    }, [route]);
 
     useEffect(() => {
-        // console.log(dynamicParkingData);
-    }, [dynamicParkingData]);
-
-    useEffect(() => {
+        let status = "";
         (async () => {
-            let parkingGaragesTest = await AsyncStorage.getItem(staticDataParkingGarage);
-            if (parkingGaragesTest === null) {
-                await AsyncStorage.setItem(staticDataParkingGarage, JSON.stringify(parkingGarages));
-                parkingGaragesTest = await AsyncStorage.getItem(staticDataParkingGarage);
-            }
-            const garageObject = parkingGaragesTest !== null ? (JSON.parse(parkingGaragesTest) as IGarage[]) : [];
-            setParkingData(garageObject);
-        })();
-
-        (async () => {
-            let status = (await Location.requestForegroundPermissionsAsync()).status;
+            status = (await Location.requestForegroundPermissionsAsync()).status;
             if (status !== "granted") {
-                console.error("Permission to access location was denied");
+                Toast.show("Standort-Erlaubnis wurde nicht erteilt!\n" + "Keine Navigation möglich.");
                 return;
             }
             status = (await Location.requestBackgroundPermissionsAsync()).status;
             if (status !== "granted") {
-                console.error("Permission to access location was denied");
+                Toast.show("Standort-Erlaubnis wurde nicht erteilt!\n" + "Keine Navigation möglich.");
                 return;
             }
-            let location: Location.LocationObject = await Location.getCurrentPositionAsync({});
-            setRegion({
-                latitude: location.coords.latitude,
-                longitude: location.coords.longitude,
-                latitudeDelta: 0.03,
-                longitudeDelta: 0.03,
-            });
+            if (status === "granted") {
+                let location: Location.LocationObject = await Location.getCurrentPositionAsync({});
+                setRegion({
+                    latitude: location.coords.latitude,
+                    longitude: location.coords.longitude,
+                    latitudeDelta: 0.03,
+                    longitudeDelta: 0.03,
+                });
+            }
         })();
 
-        if (TaskManager.isTaskDefined(GEOFENCING_TASK)) {
-            Location.startLocationUpdatesAsync(GEOFENCING_TASK, {
-                accuracy: Location.LocationAccuracy.BestForNavigation,
-                deferredUpdatesDistance: 5,
-                deferredUpdatesInterval: 500,
-            });
-        } else {
-            setTimeout(() => {
+        if (status === "granted") {
+            if (TaskManager.isTaskDefined(GEOFENCING_TASK)) {
                 Location.startLocationUpdatesAsync(GEOFENCING_TASK, {
                     accuracy: Location.LocationAccuracy.BestForNavigation,
+                    deferredUpdatesDistance: 5,
+                    deferredUpdatesInterval: 500,
                 });
-            }, 5000);
+            } else {
+                setTimeout(() => {
+                    Location.startLocationUpdatesAsync(GEOFENCING_TASK, {
+                        accuracy: Location.LocationAccuracy.BestForNavigation,
+                    });
+                }, 5000);
+            }
         }
     }, []);
 
@@ -106,8 +91,13 @@ export default function Map(props: IProps) {
     };
 
     const startNavigation = async () => {
-        let location: Location.LocationObject = await Location.getCurrentPositionAsync({});
-        setShowDirections(location.coords);
+        Location.getCurrentPositionAsync({})
+            .then((location) => {
+                setShowDirections(location.coords);
+            })
+            .catch(() => {
+                Toast.show("Standort-Erlaubnis wurde nicht erteilt!\n" + "Keine Navigation möglich.");
+            });
     };
 
     const resetNavigation = () => {
@@ -117,8 +107,8 @@ export default function Map(props: IProps) {
     return (
         <View style={styles.container}>
             <MapView style={styles.map} showsUserLocation followsUserLocation region={region}>
-                {parkingData !== undefined &&
-                    parkingData.map((garage) => (
+                {staticParkingData !== undefined &&
+                    staticParkingData.map((garage) => (
                         <Marker
                             key={garage.id}
                             coordinate={garage.coords}
