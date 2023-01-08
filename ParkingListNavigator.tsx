@@ -1,16 +1,23 @@
 import * as React from "react";
-import { StyleSheet } from "react-native";
+import { StyleSheet, View } from "react-native";
 import { useAPIcall } from "./ParkingAPI/useAPIcall";
 import { colors } from "./colors";
 import { ParkingListDetails } from "./ParkingListDetails";
 import ParkingList from "./ParkingList";
 import { createStackNavigator } from "@react-navigation/stack";
-import { Ionicons } from "@expo/vector-icons";
+import { Ionicons, MaterialCommunityIcons } from "@expo/vector-icons";
 import { IGarage } from "./IGarage";
 
 const Stack = createStackNavigator();
 
-export default function ParkingListNavigator({ navigation, staticParkingData }: any) {
+interface IProps {
+    navigation: any;
+    staticParkingData: IGarage[];
+    setFavorite(id: number): void;
+}
+
+export default function ParkingListNavigator(props: IProps) {
+    const { navigation, staticParkingData, setFavorite } = props;
     const dynamicParkingData = useAPIcall();
 
     return (
@@ -30,15 +37,31 @@ export default function ParkingListNavigator({ navigation, staticParkingData }: 
                     key={garage.id}
                     options={{
                         headerRight: () => (
-                            <Ionicons.Button
-                                color={colors.secondary}
-                                backgroundColor="transparent"
-                                underlayColor="transparent"
-                                onPress={() => console.log("hello")}
-                                style={{ marginRight: 10 }}
-                                name="heart" //"heart-outline"
-                                size={40}
-                            />
+                            <View style={{ flexDirection: "row" }}>
+                                <MaterialCommunityIcons.Button
+                                    color={colors.navigationBlue}
+                                    backgroundColor="transparent"
+                                    underlayColor="transparent"
+                                    onPress={() =>
+                                        navigation.navigate("Karte", {
+                                            destinationCoords: {
+                                                latitude: garage.coords.latitude,
+                                                longitude: garage.coords.longitude,
+                                            },
+                                        })
+                                    }
+                                    name={"navigation-variant"}
+                                    size={40}
+                                />
+                                <Ionicons.Button
+                                    color={colors.secondary}
+                                    backgroundColor="transparent"
+                                    underlayColor="transparent"
+                                    onPress={() => setFavorite(garage.id)}
+                                    name={garage.favorite === true ? "heart" : "heart-outline"}
+                                    size={40}
+                                />
+                            </View>
                         ),
                     }}
                 >

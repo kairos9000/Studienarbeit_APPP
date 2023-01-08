@@ -17,7 +17,6 @@ export function haversineDistance(coord1: LatLng, coord2: LatLng): number {
     // => eigentlich arcsin-Funktion => Konvertierung in arctan für atan2: arcsin(x) = arctan(x / (sqrt(1 - x^2)))
     // => arcsin(sqrt(havTheta)) = arctan(sqrt(havTheta) / sqrt(1 - havTheta))
     const distanceInMeters = 2 * earthRadius * Math.atan2(Math.sqrt(havTheta), Math.sqrt(1 - havTheta));
-
     // runden auf 3 Dezimalstellen
     return Math.round(distanceInMeters * 1000) / 1000;
 }
@@ -25,5 +24,3 @@ export function haversineDistance(coord1: LatLng, coord2: LatLng): number {
 function degToRadians(degree: number) {
     return (degree * Math.PI) / 180;
 }
-
-// console.log(haversineDistance({ latitude: 49.402, longitude: 11.9796 }, { latitude: 49.3762, longitude: 11.9809 }));

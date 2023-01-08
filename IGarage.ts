@@ -29,4 +29,5 @@ export interface IGarage {
     pricingNight?: Prices;
     openingHours: openHours;
     additionalInformation?: string;
+    favorite: boolean;
 }

@@ -28,17 +28,30 @@ interface IProps {
     staticParkingData: IGarage[];
 }
 
+export interface DirectionCoords {
+    startCoords: LatLng;
+    destCoords: LatLng;
+}
+
+const emptyDirCoords: DirectionCoords = {
+    startCoords: { latitude: 0, longitude: 0 },
+    destCoords: { latitude: 0, longitude: 0 },
+};
+
 export default function Map(props: IProps) {
     const { route, navigation, volume, mapsOn, staticParkingData } = props;
     const [positions, setPositions] = useState<LatLng[]>([]);
     const [region, setRegion] = useState<Region>(defaultRegion);
-    const [showDirections, setShowDirections] = useState<LatLng>({ latitude: 0, longitude: 0 });
+    const [showDirections, setShowDirections] = useState<DirectionCoords>(emptyDirCoords);
 
     const dynamicParkingData = useAPIcall(true);
     const nameAndInGeofence = useGeofenceEvent(volume, dynamicParkingData);
 
     useEffect(() => {
-        console.log(route.params);
+        if (route.params !== undefined) {
+            const params: any = route.params;
+            startNavigation(params.destinationCoords!);
+        }
     }, [route]);
 
     useEffect(() => {
@@ -83,17 +96,17 @@ export default function Map(props: IProps) {
     }, []);
 
     useEffect(() => {
-        setShowDirections({ latitude: 0, longitude: 0 });
+        setShowDirections(emptyDirCoords);
     }, [mapsOn]);
 
     const abortNavigation = () => {
-        setShowDirections({ latitude: 0, longitude: 0 });
+        setShowDirections(emptyDirCoords);
     };
 
-    const startNavigation = async () => {
+    const startNavigation = async (destinationCoords: LatLng = { latitude: 0, longitude: 0 }) => {
         Location.getCurrentPositionAsync({})
             .then((location) => {
-                setShowDirections(location.coords);
+                setShowDirections({ startCoords: location.coords, destCoords: destinationCoords });
             })
             .catch(() => {
                 Toast.show("Standort-Erlaubnis wurde nicht erteilt!\n" + "Keine Navigation möglich.");
@@ -101,7 +114,7 @@ export default function Map(props: IProps) {
     };
 
     const resetNavigation = () => {
-        setShowDirections({ latitude: 0, longitude: 0 });
+        setShowDirections(emptyDirCoords);
     };
 
     return (
@@ -119,11 +132,11 @@ export default function Map(props: IProps) {
 
                 <Directions
                     alwaysUseMaps={mapsOn}
-                    userCoords={showDirections}
+                    dirCoords={showDirections}
                     resetNavigation={resetNavigation}
                 ></Directions>
             </MapView>
-            <Button title="Starten" onPress={startNavigation}></Button>
+            <Button title="Starten" onPress={() => startNavigation()}></Button>
             <Button title="Abbrechen" onPress={abortNavigation}></Button>
         </View>
     );

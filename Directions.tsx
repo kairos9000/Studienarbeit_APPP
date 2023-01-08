@@ -8,10 +8,12 @@ import { Linking, Platform } from "react-native";
 import Toast from "react-native-root-toast";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { IGarage } from "./IGarage";
+import { colors } from "./colors";
+import { DirectionCoords } from "./Map";
 
 interface IProps {
     alwaysUseMaps: boolean;
-    userCoords: LatLng;
+    dirCoords: DirectionCoords;
     resetNavigation(): void;
 }
 
@@ -23,74 +25,123 @@ const parser = new XMLParser({
 const staticDataParkingGarage = "@staticData";
 
 export function Directions(props: IProps) {
-    const { alwaysUseMaps, userCoords, resetNavigation } = props;
+    const { alwaysUseMaps, dirCoords, resetNavigation } = props;
     const [directions, setDirections] = useState<LatLng[]>([]);
 
-    const findCorrectGpxFile = (coords: LatLng) => {
-        let minDistance = 100000;
-        let minTrackPoints: any[] = [];
-        gpxFiles.forEach((gpxFile) => {
-            let xml = parser.parse(gpxFile);
-            const trackPoints = xml.gpx.trk.trkseg.trkpt;
+    const findCorrectGpxFile = (startCoords: LatLng, destCoords: LatLng) => {
+        // nähestes Parkhaus finden
+        if (destCoords.latitude === 0 && destCoords.longitude === 0) {
+            let minDistance = 100000;
+            let minTrackPoints: any[] = [];
+            gpxFiles.forEach((gpxFile) => {
+                let xml = parser.parse(gpxFile);
+                const trackPoints = xml.gpx.trk.trkseg.trkpt;
 
-            const startingPoint = trackPoints[0];
-            const distance = haversineDistance({ latitude: startingPoint.lat, longitude: startingPoint.lon }, coords);
-            if (distance < 20) {
-                return trackPoints;
+                const startingPoint = trackPoints[0];
+
+                const distance = haversineDistance(
+                    { latitude: startingPoint.lat, longitude: startingPoint.lon },
+                    startCoords
+                );
+                console.log(distance);
+                if (distance < 20) {
+                    return trackPoints;
+                }
+
+                if (distance < minDistance) {
+                    minDistance = distance;
+                    minTrackPoints = trackPoints;
+                }
+            });
+
+            if (minTrackPoints.length === 0 || minDistance >= 100) {
+                return null;
             }
 
-            if (distance < minDistance) {
-                minDistance = distance;
-                minTrackPoints = trackPoints;
-            }
-        });
+            return minTrackPoints;
 
-        if (minTrackPoints.length === 0 || minDistance >= 100) {
-            return null;
+            // möglichst Parkhaus mit startCoords als Start-Koordinaten und destCoords als End-Koordinaten finden
+        } else {
+            let possibleTrackPoints: any[] = [];
+            gpxFiles.forEach((gpxFile) => {
+                let xml = parser.parse(gpxFile);
+                const trackPoints = xml.gpx.trk.trkseg.trkpt;
+
+                const startingPoint = trackPoints[0];
+                const distance = haversineDistance(
+                    { latitude: startingPoint.lat, longitude: startingPoint.lon },
+                    startCoords
+                );
+
+                // nur gpx-Dateien nehmen, bei denen die Start-Koordinaten weniger als 50m von startCoords entfernt ist
+                if (distance < 50) {
+                    possibleTrackPoints.push(trackPoints);
+                }
+            });
+
+            if (possibleTrackPoints.length === 0) {
+                return null;
+            } else {
+                let correctTrackPoints: any[] = [];
+                possibleTrackPoints.forEach((trackPoints) => {
+                    const lastTrackPoint = trackPoints.slice(-1)[0];
+                    const distance = haversineDistance(
+                        { latitude: lastTrackPoint.lat, longitude: lastTrackPoint.lon },
+                        destCoords
+                    );
+
+                    if (distance < 50) {
+                        correctTrackPoints = trackPoints;
+                    }
+                });
+                if (correctTrackPoints.length !== 0) {
+                    return correctTrackPoints;
+                }
+                return null;
+            }
         }
-
-        return minTrackPoints;
     };
 
     useEffect(() => {
-        if (userCoords.latitude !== 0 && userCoords.longitude !== 0) {
+        if (dirCoords.startCoords.latitude !== 0 && dirCoords.startCoords.longitude !== 0) {
             let correctFile = null;
             if (alwaysUseMaps === false) {
-                correctFile = findCorrectGpxFile(userCoords);
+                correctFile = findCorrectGpxFile(dirCoords.startCoords, dirCoords.destCoords);
             }
 
             if (correctFile === null) {
-                AsyncStorage.getItem(staticDataParkingGarage).then((garageData) => {
-                    if (garageData !== null) {
-                        const parkingGarages: IGarage[] = JSON.parse(garageData);
+                let destCoords: LatLng = dirCoords.destCoords;
 
-                        let minDistance = 100000;
-                        let minCoords: LatLng = { latitude: 0, longitude: 0 };
+                if (dirCoords.destCoords.latitude === 0 && dirCoords.destCoords.longitude === 0) {
+                    AsyncStorage.getItem(staticDataParkingGarage).then((garageData) => {
+                        if (garageData !== null) {
+                            const parkingGarages: IGarage[] = JSON.parse(garageData);
 
-                        parkingGarages.forEach((garage) => {
-                            const distance = haversineDistance(garage.coords, userCoords);
-                            if (distance < minDistance) {
-                                minDistance = distance;
-                                minCoords = garage.coords;
-                            }
-                        });
+                            let minDistance = 100000;
+                            let minCoords: LatLng = { latitude: 0, longitude: 0 };
 
-                        const latLng = `${minCoords.latitude},${minCoords.longitude}`;
-
-                        // Weiterleitung zu Google Maps => wenn keine App installiert ist, dann im Browser
-                        const url = `https://www.google.com/maps/dir/?api=1&destination=${latLng}`;
-
-                        resetNavigation();
-                        Toast.show("Weiterleitung zu Google Maps.", { position: Toast.positions.CENTER });
-                        Linking.openURL(url);
-                    } else {
-                        Toast.show("Parkhausdaten konnten nicht gefunden werden.", {
-                            duration: Toast.durations.LONG,
-                            position: Toast.positions.BOTTOM,
-                        });
-                    }
-                });
-                // zu Google Maps weitergehen
+                            parkingGarages.forEach((garage) => {
+                                const distance = haversineDistance(garage.coords, dirCoords.startCoords);
+                                if (distance < minDistance) {
+                                    minDistance = distance;
+                                    minCoords = garage.coords;
+                                }
+                            });
+                            destCoords = minCoords;
+                        } else {
+                            Toast.show("Parkhausdaten konnten nicht gefunden werden.", {
+                                duration: Toast.durations.LONG,
+                                position: Toast.positions.BOTTOM,
+                            });
+                        }
+                    });
+                }
+                // Weiterleitung zu Google Maps => wenn keine App installiert ist, dann im Browser
+                const latLng = `${destCoords.latitude},${destCoords.longitude}`;
+                const url = `https://www.google.com/maps/dir/?api=1&destination=${latLng}`;
+                Toast.show("Weiterleitung zu Google Maps.", { position: Toast.positions.CENTER });
+                resetNavigation();
+                Linking.openURL(url);
             } else {
                 const extractedPositions: LatLng[] = [];
                 correctFile.forEach((trackPoint: any) => {
@@ -104,12 +155,12 @@ export function Directions(props: IProps) {
         } else {
             setDirections([]);
         }
-    }, [userCoords]);
+    }, [dirCoords]);
 
     return (
         <Polyline
             coordinates={directions}
-            strokeColor="#4285F4" // fallback for when `strokeColors` is not supported by the map-provider
+            strokeColor={colors.navigationBlue} // fallback for when `strokeColors` is not supported by the map-provider
             strokeColors={[
                 "#7F0000",
                 "#00000000", // no color, creates a "long" gradient between the previous and next coordinate

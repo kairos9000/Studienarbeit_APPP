@@ -15,6 +15,7 @@ import { createNativeStackNavigator } from "@react-navigation/native-stack";
 import ParkingListNavigator from "./ParkingListNavigator";
 import { IGarage } from "./IGarage";
 import { parkingGarages } from "./staticDataParkingGarage";
+import Toast from "react-native-root-toast";
 
 const Tab = createMaterialTopTabNavigator();
 const googleMapsOffIcon = require("./assets/google-maps-off.png");
@@ -49,6 +50,32 @@ export default function App() {
             if (parkingGaragesTest === null) {
                 await AsyncStorage.setItem(staticDataParkingGarage, JSON.stringify(parkingGarages));
                 parkingGaragesTest = await AsyncStorage.getItem(staticDataParkingGarage);
+            } else {
+                // Um das statische Objekt in der Datenbank zu aktualisieren, falls sich parkingGarages in
+                // der Datei staticDataParkingGarage.ts geändert hat => zuerst alle favorite-Werte auf false
+                // setzen, damit diese den Vergleich nicht stören
+                let parkingGarageBuffer: IGarage[] = JSON.parse(parkingGaragesTest);
+
+                parkingGarageBuffer.forEach((garageObject: IGarage, index: number) => {
+                    parkingGarageBuffer[index].favorite = false;
+                });
+
+                if (JSON.stringify(parkingGarageBuffer) !== JSON.stringify(parkingGarages)) {
+                    // neues Objekt erstellen, das die Neuerungen von parkingGarages enthält, aber die
+                    // alten favorite Werte beibehält
+                    const parkingGarageFavorite: IGarage[] = JSON.parse(parkingGaragesTest);
+                    let newParkingGarages: IGarage[] = [];
+                    parkingGarages.forEach((garage) => {
+                        const oldFavorite = parkingGarageFavorite.find(
+                            (favoriteGarage) => garage.id === favoriteGarage.id
+                        );
+                        if (oldFavorite !== undefined) {
+                            newParkingGarages.push({ ...garage, favorite: oldFavorite.favorite });
+                        }
+                    });
+                    await AsyncStorage.setItem(staticDataParkingGarage, JSON.stringify(newParkingGarages));
+                    parkingGaragesTest = await AsyncStorage.getItem(staticDataParkingGarage);
+                }
             }
             const garageObject = parkingGaragesTest !== null ? (JSON.parse(parkingGaragesTest) as IGarage[]) : [];
             setStaticParkingData(garageObject);
@@ -62,6 +89,19 @@ export default function App() {
     useEffect(() => {
         AsyncStorage.setItem(settingsDataMaps, JSON.stringify(mapsOn));
     }, [mapsOn]);
+
+    const setFavorite = async (id: number) => {
+        const parkingGarages = await AsyncStorage.getItem(staticDataParkingGarage);
+        if (parkingGarages === null) {
+            Toast.show("Keine Daten vorhanden.\nBitte App neu starten.");
+        } else {
+            let parkingGarageBuffer: IGarage[] = JSON.parse(parkingGarages);
+            let garageIndex = parkingGarageBuffer.findIndex((garage: IGarage) => garage.id === id);
+            parkingGarageBuffer[garageIndex].favorite = !parkingGarageBuffer[garageIndex].favorite;
+            AsyncStorage.setItem(staticDataParkingGarage, JSON.stringify(parkingGarageBuffer));
+            setStaticParkingData(parkingGarageBuffer);
+        }
+    };
 
     return (
         <Provider>
@@ -125,7 +165,11 @@ export default function App() {
                         <Tab.Screen
                             name="Liste"
                             children={(props) => (
-                                <ParkingListNavigator staticParkingData={staticParkingData} {...props} />
+                                <ParkingListNavigator
+                                    setFavorite={setFavorite}
+                                    staticParkingData={staticParkingData}
+                                    {...props}
+                                />
                             )}
                             options={{
                                 tabBarLabel: "Liste",

@@ -9,4 +9,5 @@ export const colors = {
     secondary: "#FFA57E",
     red: "#ea0f0a",
     openGreen: "#7fc23c",
+    navigationBlue: "#4285F4",
 };
