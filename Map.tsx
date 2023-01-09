@@ -56,43 +56,50 @@ export default function Map(props: IProps) {
 
     useEffect(() => {
         let status = "";
+        // Anfragen der Erlaubnis für die Positionsdaten vom Nutzer
         (async () => {
-            status = (await Location.requestForegroundPermissionsAsync()).status;
-            if (status !== "granted") {
+            try {
+                status = (await Location.requestForegroundPermissionsAsync()).status;
+                if (status !== "granted") {
+                    Toast.show("Standort-Erlaubnis wurde nicht erteilt!\n" + "Keine Navigation möglich.");
+                    return;
+                }
+                status = (await Location.requestBackgroundPermissionsAsync()).status;
+                if (status !== "granted") {
+                    Toast.show("Standort-Erlaubnis wurde nicht erteilt!\n" + "Keine Navigation möglich.");
+                    return;
+                }
+                if (status === "granted") {
+                    let location: Location.LocationObject = await Location.getCurrentPositionAsync({});
+                    setRegion({
+                        latitude: location.coords.latitude,
+                        longitude: location.coords.longitude,
+                        latitudeDelta: 0.03,
+                        longitudeDelta: 0.03,
+                    });
+                }
+            } catch {
                 Toast.show("Standort-Erlaubnis wurde nicht erteilt!\n" + "Keine Navigation möglich.");
-                return;
             }
-            status = (await Location.requestBackgroundPermissionsAsync()).status;
-            if (status !== "granted") {
-                Toast.show("Standort-Erlaubnis wurde nicht erteilt!\n" + "Keine Navigation möglich.");
-                return;
-            }
+            // Starten der kontinuierlichen Updates der Position des Nutzers, für das Geofencing
             if (status === "granted") {
-                let location: Location.LocationObject = await Location.getCurrentPositionAsync({});
-                setRegion({
-                    latitude: location.coords.latitude,
-                    longitude: location.coords.longitude,
-                    latitudeDelta: 0.03,
-                    longitudeDelta: 0.03,
-                });
-            }
-        })();
-
-        if (status === "granted") {
-            if (TaskManager.isTaskDefined(GEOFENCING_TASK)) {
-                Location.startLocationUpdatesAsync(GEOFENCING_TASK, {
-                    accuracy: Location.LocationAccuracy.BestForNavigation,
-                    deferredUpdatesDistance: 5,
-                    deferredUpdatesInterval: 500,
-                });
-            } else {
-                setTimeout(() => {
+                if (TaskManager.isTaskDefined(GEOFENCING_TASK)) {
                     Location.startLocationUpdatesAsync(GEOFENCING_TASK, {
                         accuracy: Location.LocationAccuracy.BestForNavigation,
+                        // Updates nur wenn sich der Nutzer bewegt hat => performanter
+                        deferredUpdatesDistance: 5,
+                        deferredUpdatesInterval: 500,
                     });
-                }, 5000);
+                } else {
+                    // Falls noch kein Task definiert war, 5 Sekunden warten und nochmal versuchen
+                    setTimeout(() => {
+                        Location.startLocationUpdatesAsync(GEOFENCING_TASK, {
+                            accuracy: Location.LocationAccuracy.BestForNavigation,
+                        });
+                    }, 5000);
+                }
             }
-        }
+        })();
     }, []);
 
     useEffect(() => {

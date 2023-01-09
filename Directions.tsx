@@ -28,32 +28,43 @@ export function Directions(props: IProps) {
     const { alwaysUseMaps, dirCoords, resetNavigation } = props;
     const [directions, setDirections] = useState<LatLng[]>([]);
 
+    // GPX-Datei finden, die zum einem Parkhaus vom Altstadtring aus führt
     const findCorrectGpxFile = (startCoords: LatLng, destCoords: LatLng) => {
         // nähestes Parkhaus finden
         if (destCoords.latitude === 0 && destCoords.longitude === 0) {
             let minDistance = 100000;
             let minTrackPoints: any[] = [];
+            // Eigener GPX-Datei Parser, da im Internet kein guter gefunden werden konnte
             gpxFiles.forEach((gpxFile) => {
                 let xml = parser.parse(gpxFile);
                 const trackPoints = xml.gpx.trk.trkseg.trkpt;
 
                 const startingPoint = trackPoints[0];
 
+                // Berechnung der Luftlinie zwischen den Koordinaten des Startpunkts
+                // der GPX-Datei und den aktuellen Koordinaten des Nutzers
                 const distance = haversineDistance(
                     { latitude: startingPoint.lat, longitude: startingPoint.lon },
                     startCoords
                 );
-                console.log(distance);
+
+                // Wenn Entfernung kleiner als 20m ist abbrechen => wird wahrscheinlich nicht viel besser
+                // und räumlicher Unterschied zwischen Startpunkt der GPX-Datei und dem NUtzer kaum
+                // sichtbar
                 if (distance < 20) {
                     return trackPoints;
                 }
 
+                // GPX-Datei mit minimalster Entfernung zum Startpunkt
                 if (distance < minDistance) {
                     minDistance = distance;
                     minTrackPoints = trackPoints;
                 }
             });
 
+            // Wenn keine Datei gefunden wurde oder die Entfernung zum nähesten Startpunkt mehr
+            // als 100m sind => Google Maps aufrufen, da Nutzer wahrscheinlich nicht auf dem
+            // Altstadtring ist, weil die GPX-Dateien in möglichst unter 100m Abständen gewählt wurden
             if (minTrackPoints.length === 0 || minDistance >= 100) {
                 return null;
             }
@@ -84,12 +95,17 @@ export function Directions(props: IProps) {
             } else {
                 let correctTrackPoints: any[] = [];
                 possibleTrackPoints.forEach((trackPoints) => {
+                    // Endpunkt der GPX-Datei
                     const lastTrackPoint = trackPoints.slice(-1)[0];
+                    // Entfernung zwischen Endpunkt und gewünschtem Punkt (Parkhaus)
                     const distance = haversineDistance(
                         { latitude: lastTrackPoint.lat, longitude: lastTrackPoint.lon },
                         destCoords
                     );
 
+                    // von den möglichen GPX-Dateien, mit annehmbaren Startkoordinaten
+                    // nur die nehmen, bei denen das gewünschte Parkhaus weniger als 50m
+                    // vom Endpunkt entfernt ist
                     if (distance < 50) {
                         correctTrackPoints = trackPoints;
                     }
@@ -97,6 +113,7 @@ export function Directions(props: IProps) {
                 if (correctTrackPoints.length !== 0) {
                     return correctTrackPoints;
                 }
+                // Wenn keine GPX-Datei gefunden wurde wieder zu Google Maps weiterleiten
                 return null;
             }
         }
@@ -110,15 +127,17 @@ export function Directions(props: IProps) {
             }
 
             if (correctFile === null) {
-                let destCoords: LatLng = dirCoords.destCoords;
-
+                // Weiterleitung zu Google Maps muss bei beiden Konditionen stattfinden,
+                // da es bei AsyncStorage dazu kommen kann, dass das Programm weiterläuft und Google
+                // Maps dann mit falschen Koordinaten aufruft => mit einem Aufruf in jeder Kondition
+                // wird sichergestellt, dass die richtigen Koordinaten verwendet werden
                 if (dirCoords.destCoords.latitude === 0 && dirCoords.destCoords.longitude === 0) {
                     AsyncStorage.getItem(staticDataParkingGarage).then((garageData) => {
                         if (garageData !== null) {
                             const parkingGarages: IGarage[] = JSON.parse(garageData);
 
                             let minDistance = 100000;
-                            let minCoords: LatLng = { latitude: 0, longitude: 0 };
+                            let minCoords: LatLng = dirCoords.destCoords;
 
                             parkingGarages.forEach((garage) => {
                                 const distance = haversineDistance(garage.coords, dirCoords.startCoords);
@@ -127,7 +146,12 @@ export function Directions(props: IProps) {
                                     minCoords = garage.coords;
                                 }
                             });
-                            destCoords = minCoords;
+                            // Weiterleitung zu Google Maps => wenn keine App installiert ist, dann im Browser
+                            const latLng = `${minCoords.latitude},${minCoords.longitude}`;
+                            const url = `https://www.google.com/maps/dir/?api=1&destination=${latLng}`;
+                            Toast.show("Weiterleitung zu Google Maps.", { position: Toast.positions.CENTER });
+                            resetNavigation();
+                            Linking.openURL(url);
                         } else {
                             Toast.show("Parkhausdaten konnten nicht gefunden werden.", {
                                 duration: Toast.durations.LONG,
@@ -135,14 +159,17 @@ export function Directions(props: IProps) {
                             });
                         }
                     });
+                } else {
+                    // Weiterleitung zu Google Maps => wenn keine App installiert ist, dann im Browser
+                    const latLng = `${dirCoords.destCoords.latitude},${dirCoords.destCoords.longitude}`;
+                    const url = `https://www.google.com/maps/dir/?api=1&destination=${latLng}`;
+                    Toast.show("Weiterleitung zu Google Maps.", { position: Toast.positions.CENTER });
+                    resetNavigation();
+                    Linking.openURL(url);
                 }
-                // Weiterleitung zu Google Maps => wenn keine App installiert ist, dann im Browser
-                const latLng = `${destCoords.latitude},${destCoords.longitude}`;
-                const url = `https://www.google.com/maps/dir/?api=1&destination=${latLng}`;
-                Toast.show("Weiterleitung zu Google Maps.", { position: Toast.positions.CENTER });
-                resetNavigation();
-                Linking.openURL(url);
             } else {
+                // Erstellen der Koordinaten zum Einzeichnen in die Karte im richtigen Format
+                // für die Polyline-Komponente
                 const extractedPositions: LatLng[] = [];
                 correctFile.forEach((trackPoint: any) => {
                     extractedPositions.push({
@@ -160,15 +187,8 @@ export function Directions(props: IProps) {
     return (
         <Polyline
             coordinates={directions}
-            strokeColor={colors.navigationBlue} // fallback for when `strokeColors` is not supported by the map-provider
-            strokeColors={[
-                "#7F0000",
-                "#00000000", // no color, creates a "long" gradient between the previous and next coordinate
-                "#B24112",
-                "#E5845C",
-                "#238C23",
-                "#7F0000",
-            ]}
+            strokeColor={colors.navigationBlue}
+            strokeColors={["#7F0000", "#00000000", "#B24112", "#E5845C", "#238C23", "#7F0000"]}
             strokeWidth={6}
         />
     );

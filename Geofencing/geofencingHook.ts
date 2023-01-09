@@ -15,9 +15,10 @@ let geofenceHandles: TaskManager.TaskManagerTaskExecutor[] = [];
 
 TaskManager.defineTask(GEOFENCING_TASK, (data: any) => {
     if (data.error) {
-        console.log("error here");
+        Toast.show("Fehler bei Abfragen der Positionsdaten");
         return;
     }
+    // Nur die letzten Standort-Daten, da sonst sehr viel verarbeitet werden müsste
     const location = data.data.locations.pop();
     for (const handle of geofenceHandles) {
         handle(location.coords);
@@ -34,46 +35,53 @@ interface GeofenceData {
     id: number;
     name: string;
     inGeofence: boolean;
+    getUserCoords?: LatLng;
 }
 
-export function useGeofenceEvent(volume: boolean, dynamicParkingData: XMLData) {
+export function useGeofenceEvent(volume: boolean, dynamicParkingData: XMLData, getOnlyUserCoords: boolean = false) {
     let regionsData: RegionsStaticData[] = [];
     let geofenceData: GeofenceData[] = [];
-
-    AsyncStorage.getItem(staticDataParkingGarage)
-        .then((garageData) => {
-            if (garageData !== null) {
-                const parkingGarages: IGarage[] = JSON.parse(garageData);
-                parkingGarages.map((garage) => {
-                    regionsData.push({
-                        id: garage.id,
-                        name: garage.name,
-                        coords: garage.coords,
+    if (getOnlyUserCoords === false) {
+        AsyncStorage.getItem(staticDataParkingGarage)
+            .then((garageData) => {
+                if (garageData !== null) {
+                    const parkingGarages: IGarage[] = JSON.parse(garageData);
+                    parkingGarages.map((garage) => {
+                        regionsData.push({
+                            id: garage.id,
+                            name: garage.name,
+                            coords: garage.coords,
+                        });
+                        geofenceData.push({
+                            id: garage.id,
+                            name: garage.name,
+                            inGeofence: false,
+                        });
                     });
-                    geofenceData.push({
-                        id: garage.id,
-                        name: garage.name,
-                        inGeofence: false,
+                } else {
+                    Toast.show("Parkhausdaten konnten nicht gefunden werden", {
+                        duration: Toast.durations.LONG,
+                        position: Toast.positions.BOTTOM,
                     });
-                });
-            } else {
-                Toast.show("Parkhausdaten konnten nicht gefunden werden", {
+                }
+            })
+            .catch((e) => {
+                Toast.show("Beim Laden der Parkhausdaten ist ein Fehler aufgetreten", {
                     duration: Toast.durations.LONG,
                     position: Toast.positions.BOTTOM,
                 });
-            }
-        })
-        .catch((e) => {
-            Toast.show("Beim Laden der Parkhausdaten ist ein Fehler aufgetreten", {
-                duration: Toast.durations.LONG,
-                position: Toast.positions.BOTTOM,
             });
-        });
+    }
 
     const [regions, setRegions] = useState<GeofenceData[]>(geofenceData);
 
     useEffect(() => {
         const handleIsInGeofence = (userCoords: any) => {
+            // Für die Aktualisierung der ParkingList, falls nach Entfernung sortiert werden soll
+            if (getOnlyUserCoords === true) {
+                setRegions([{ id: 0, name: "", inGeofence: false, getUserCoords: userCoords }]);
+                return;
+            }
             if (regionsData.length === 0 && regions.length === 0) {
                 return;
             }

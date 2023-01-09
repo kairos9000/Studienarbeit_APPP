@@ -23,43 +23,51 @@ export interface DynamicParkingData {
 }
 
 const getAPI = (showToasts: boolean) => {
-    return fetch("https://parken.amberg.de/wp-content/uploads/pls/pls.xml")
-        .then((response) => {
-            if (response.status === 200) {
-                return response.text();
-            } else {
-                throw new Error();
-            }
-        })
-        .then(async (text) => {
-            if (text === undefined) {
+    return (
+        fetch("https://parken.amberg.de/wp-content/uploads/pls/pls.xml")
+            .then((response) => {
+                if (response.status === 200) {
+                    return response.text();
+                } else {
+                    throw new Error();
+                }
+            })
+            .then(async (text) => {
+                // falls keine Daten geliefert wurden alte Daten nehmen
+                if (text === undefined) {
+                    const oldParkingData: XMLData = await getOldParkingData(showToasts);
+                    return oldParkingData;
+                } else {
+                    const parser = new XMLParser();
+                    let xml = parser.parse(text);
+                    // decoden der HTML-Entities, wie zum Beispiel ü in Kurfürstenbad, da diese sonst nicht
+                    // korrekt angezeigt werden können
+                    const decodedData = decodeHTMLEntities(xml.Daten.Parkhaus);
+                    const parkingData: XMLData = {
+                        Zeitstempel: xml.Daten.Zeitstempel,
+                        Parkhaus: decodedData,
+                    };
+
+                    // Daten aktualisieren
+                    await AsyncStorage.setItem(dynamicDataParkingGarage, JSON.stringify(parkingData));
+                    if (showToasts) {
+                        Toast.show("Daten wurden aktualisiert.");
+                    }
+                    return parkingData;
+                }
+            })
+            // Bei Fehler, zum Beispiel keine Internetverbindung, alte Daten nehmen
+            .catch(async () => {
                 const oldParkingData: XMLData = await getOldParkingData(showToasts);
                 return oldParkingData;
-            } else {
-                const parser = new XMLParser();
-                let xml = parser.parse(text);
-                const decodedData = decodeHTMLEntities(xml.Daten.Parkhaus);
-                const parkingData: XMLData = {
-                    Zeitstempel: xml.Daten.Zeitstempel,
-                    Parkhaus: decodedData,
-                };
-
-                await AsyncStorage.setItem(dynamicDataParkingGarage, JSON.stringify(parkingData));
-                if (showToasts) {
-                    Toast.show("Daten wurden aktualisiert.");
-                }
-                return parkingData;
-            }
-        })
-        .catch(async () => {
-            const oldParkingData: XMLData = await getOldParkingData(showToasts);
-            return oldParkingData;
-        });
+            })
+    );
 };
 
 const getOldParkingData = async (showToasts: boolean) => {
     const oldParkingDataTest = await AsyncStorage.getItem(dynamicDataParkingGarage);
 
+    // Falls gar keine Daten vorhanden sind und keine abgefragt werden können => nichts zu machen
     if (oldParkingDataTest === null) {
         if (showToasts) {
             Toast.show(
@@ -90,6 +98,8 @@ const decodeHTMLEntities = (xmlObject: DynamicParkingData[]) => {
     return xmlObject;
 };
 
+// showToasts muss verwendet werden, da Map und App beide diesen Hook brauchen => damit die Toasts
+// nicht doppelt angezeigt werden, die Toast-Anzeige von einer Komponente blockieren
 export function useAPIcall(showToasts: boolean = false) {
     const [dynamicParkingData, setDynamicParkingData] = useState<XMLData>({ Zeitstempel: 0, Parkhaus: [] });
 

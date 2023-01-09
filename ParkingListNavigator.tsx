@@ -7,6 +7,7 @@ import ParkingList from "./ParkingList";
 import { createStackNavigator } from "@react-navigation/stack";
 import { Ionicons, MaterialCommunityIcons } from "@expo/vector-icons";
 import { IGarage } from "./IGarage";
+import { useState } from "react";
 
 const Stack = createStackNavigator();
 
@@ -16,6 +17,8 @@ interface IProps {
     setFavorite(id: number): void;
 }
 
+// Definieren der Routen zu den Detail-Fenstern der einzelnen Parkhäuser, die mit einem Klick
+// in der Liste geöffnet werden
 export default function ParkingListNavigator(props: IProps) {
     const { navigation, staticParkingData, setFavorite } = props;
     const dynamicParkingData = useAPIcall();

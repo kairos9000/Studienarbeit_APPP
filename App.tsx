@@ -1,17 +1,14 @@
 import * as React from "react";
-import { StyleSheet, Text, View, Dimensions, Button, Pressable } from "react-native";
+import { StyleSheet, Text, View, Pressable } from "react-native";
 import { RootSiblingParent } from "react-native-root-siblings";
 import { NavigationContainer } from "@react-navigation/native";
 import { createMaterialTopTabNavigator } from "@react-navigation/material-top-tabs";
 import Map from "./Map";
-import ParkingList from "./ParkingList";
 import Ionicons from "@expo/vector-icons/Ionicons";
 import { colors } from "./colors";
-import { createContext, useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import { Divider, Menu, Provider } from "react-native-paper";
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import { ParkingListDetails } from "./ParkingListDetails";
-import { createNativeStackNavigator } from "@react-navigation/native-stack";
 import ParkingListNavigator from "./ParkingListNavigator";
 import { IGarage } from "./IGarage";
 import { parkingGarages } from "./staticDataParkingGarage";
@@ -82,6 +79,7 @@ export default function App() {
         })();
     }, []);
 
+    // Einstellungen im AsyncStorage speichern
     useEffect(() => {
         AsyncStorage.setItem(settingsDataVolume, JSON.stringify(volumeOn));
     }, [volumeOn]);
@@ -90,8 +88,10 @@ export default function App() {
         AsyncStorage.setItem(settingsDataMaps, JSON.stringify(mapsOn));
     }, [mapsOn]);
 
+    // Toggeln des boolschen Werts favorite für die statischen Daten der id des gewünschten Parkhauses
     const setFavorite = async (id: number) => {
         const parkingGarages = await AsyncStorage.getItem(staticDataParkingGarage);
+        // Wenn keine statischen Daten vorhanden sind ist irgendetwas schiefgelaufen
         if (parkingGarages === null) {
             Toast.show("Keine Daten vorhanden.\nBitte App neu starten.");
         } else {

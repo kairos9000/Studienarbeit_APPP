@@ -1,8 +1,8 @@
 import { TouchableOpacity, Text, StyleSheet, Dimensions } from "react-native";
 import { colors } from "./colors";
-import { AntDesign, Ionicons, MaterialCommunityIcons } from "@expo/vector-icons";
-import { useEffect, useState } from "react";
+import { AntDesign, MaterialCommunityIcons } from "@expo/vector-icons";
 
+// Anzeige der einzelnen Elemente der Liste
 export function ParkingListItem({ item, onPress, backgroundColor, textColor }: any) {
     return (
         <TouchableOpacity onPress={() => onPress(item)} style={[styles.item, backgroundColor]}>

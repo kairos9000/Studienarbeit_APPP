@@ -22,8 +22,6 @@ export function ParkingListDetails(props: IProps) {
     const [parkingSpaces, setParkingSpaces] = useState<number>(0);
 
     useEffect(() => {
-        // console.log(dynamicParkingData);
-        // console.log(staticParkingData);
         const endHour = Number(staticParkingData.openingHours.endHour.split(":")[0]);
         const startHour = Number(staticParkingData.openingHours.startHour.split(":")[0]);
         setOpeningHours(endHour - startHour);
@@ -264,15 +262,15 @@ const styles = StyleSheet.create({
     },
     card: {
         marginTop: 15,
-        width: "40%",
+        width: Dimensions.get("window").width * 0.4,
     },
     cardWide: {
         marginTop: 15,
-        width: "87%",
+        width: Dimensions.get("window").width * 0.87,
     },
     cardWideBottom: {
         marginTop: 15,
         marginBottom: 15,
-        width: "87%",
+        width: Dimensions.get("window").width * 0.87,
     },
 });
