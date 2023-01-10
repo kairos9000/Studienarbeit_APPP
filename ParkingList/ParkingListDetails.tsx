@@ -1,8 +1,8 @@
 import { TouchableOpacity, Text, StyleSheet, Dimensions, View, ScrollView } from "react-native";
-import { colors } from "./colors";
+import { colors } from "../colors";
 import { Button, Card, DataTable } from "react-native-paper";
-import { DynamicParkingData } from "./ParkingAPI/useAPIcall";
-import { IGarage } from "./IGarage";
+import { DynamicParkingData } from "../ParkingAPI/useAPIcall";
+import { IGarage } from "../IGarage";
 import { useEffect, useState } from "react";
 import * as Progress from "react-native-progress";
 

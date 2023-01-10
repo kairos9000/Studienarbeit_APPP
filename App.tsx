@@ -3,13 +3,13 @@ import { StyleSheet, Text, View, Pressable } from "react-native";
 import { RootSiblingParent } from "react-native-root-siblings";
 import { NavigationContainer } from "@react-navigation/native";
 import { createMaterialTopTabNavigator } from "@react-navigation/material-top-tabs";
-import Map from "./Map";
+import Map from "./Map/Map";
 import Ionicons from "@expo/vector-icons/Ionicons";
 import { colors } from "./colors";
 import { useEffect, useState } from "react";
 import { Divider, Menu, Provider } from "react-native-paper";
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import ParkingListNavigator from "./ParkingListNavigator";
+import ParkingListNavigator from "./ParkingList/ParkingListNavigator";
 import { IGarage } from "./IGarage";
 import { parkingGarages } from "./staticDataParkingGarage";
 import Toast from "react-native-root-toast";
@@ -168,6 +168,7 @@ export default function App() {
                                 <ParkingListNavigator
                                     setFavorite={setFavorite}
                                     staticParkingData={staticParkingData}
+                                    alwaysUseMaps={mapsOn}
                                     {...props}
                                 />
                             )}

@@ -1,16 +1,14 @@
 import * as React from "react";
 import { StyleSheet, View, FlatList, Switch, Text, Pressable } from "react-native";
-import { DynamicParkingData } from "./ParkingAPI/useAPIcall";
+import { DynamicParkingData } from "../ParkingAPI/useAPIcall";
 import { useEffect, useState } from "react";
-import { colors } from "./colors";
-import { IGarage } from "./IGarage";
+import { colors } from "../colors";
+import { IGarage } from "../IGarage";
 import { ParkingListItem } from "./ParkingListItem";
 import { FontAwesome, MaterialCommunityIcons } from "@expo/vector-icons";
 import { Divider, Menu } from "react-native-paper";
-import { haversineDistance } from "./Geofencing/haversineDistance";
-import * as Location from "expo-location";
-import Toast from "react-native-root-toast";
-import { useGeofenceEvent } from "./Geofencing/geofencingHook";
+import { haversineDistance } from "../Geofencing/haversineDistance";
+import { useGeofenceEvent } from "../Geofencing/geofencingHook";
 import { LatLng } from "react-native-maps";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 
@@ -38,7 +36,7 @@ export default function ParkingList({ navigation, dynamicParkingData, staticPark
     const [showOnlyFavorites, setShowOnlyFavorites] = useState<boolean>(false);
     const [showMenu, setShowMenu] = useState<boolean>(false);
     const [sorting, setSorting] = useState<Sorting>("Alphabet");
-    // damit sich die Liste bei Auswählen der Entfernung automatisch aktualisiert
+    // damit sich die Entfernungen zu den Parkhäusern in der Liste automatisch aktualisieren
     const userCoords = useGeofenceEvent(false, { Parkhaus: [], Zeitstempel: 0 }, true);
 
     useEffect(() => {
@@ -103,6 +101,8 @@ export default function ParkingList({ navigation, dynamicParkingData, staticPark
             // callbacks wurden durch "Hack" mit selbst aufrufender async-await Funktion erstellt, also
             // (async () => {})(); => führt bei zu vielen Aufrufen zu Performanceproblemen, da diese Funktionen
             // auf den Callback-Stapel gelegt werden, und die App nicht mehr mit Aktualisieren mitkommt
+            // Den "Hack" nur in useEffects einfügen, die nur einmal aufgerufen werden oder
+            // gar nicht
             dynamicParkingData.Parkhaus.forEach((garage: DynamicParkingData) => {
                 dynamicDataWithDistance.push({ ...garage, distance: "n.a." });
             });
@@ -137,7 +137,7 @@ export default function ParkingList({ navigation, dynamicParkingData, staticPark
             });
         }
         setListData(listDataBuffer);
-    }, [dynamicParkingData, showOnlyFavorites, sorting, userCoords]);
+    }, [staticParkingData, dynamicParkingData, showOnlyFavorites, sorting, userCoords]);
 
     const onPress = (item: IGarage) => {
         navigation.navigate(item.name);

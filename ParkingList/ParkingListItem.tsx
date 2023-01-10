@@ -1,5 +1,5 @@
 import { TouchableOpacity, Text, StyleSheet, Dimensions, View } from "react-native";
-import { colors } from "./colors";
+import { colors } from "../colors";
 import { AntDesign, MaterialCommunityIcons } from "@expo/vector-icons";
 
 // Anzeige der einzelnen Elemente der Liste

@@ -1,13 +1,17 @@
 import * as React from "react";
 import { StyleSheet, View } from "react-native";
-import { useAPIcall } from "./ParkingAPI/useAPIcall";
-import { colors } from "./colors";
+import { useAPIcall } from "../ParkingAPI/useAPIcall";
+import { colors } from "../colors";
 import { ParkingListDetails } from "./ParkingListDetails";
 import ParkingList from "./ParkingList";
 import { createStackNavigator } from "@react-navigation/stack";
 import { Ionicons, MaterialCommunityIcons } from "@expo/vector-icons";
-import { IGarage } from "./IGarage";
+import { IGarage } from "../IGarage";
 import { useState } from "react";
+import { useGeofenceEvent } from "../Geofencing/geofencingHook";
+import { findCorrectGpxFile } from "../Navigation/findCorrectGpxFile";
+import { LatLng } from "react-native-maps";
+import Toast from "react-native-root-toast";
 
 const Stack = createStackNavigator();
 
@@ -15,13 +19,28 @@ interface IProps {
     navigation: any;
     staticParkingData: IGarage[];
     setFavorite(id: number): void;
+    alwaysUseMaps: boolean;
 }
 
 // Definieren der Routen zu den Detail-Fenstern der einzelnen Parkhäuser, die mit einem Klick
 // in der Liste geöffnet werden
 export default function ParkingListNavigator(props: IProps) {
-    const { navigation, staticParkingData, setFavorite } = props;
+    const { navigation, staticParkingData, setFavorite, alwaysUseMaps } = props;
     const dynamicParkingData = useAPIcall();
+
+    const navigateToParkingGarage = (destCoords: LatLng) => {
+        findCorrectGpxFile(destCoords, alwaysUseMaps)
+            .then((trackPoints) => {
+                if (trackPoints !== null) {
+                    navigation.navigate("Karte", {
+                        trackPoints: trackPoints,
+                    });
+                }
+            })
+            .catch(() => {
+                Toast.show("Ein Fehler bei der Routen-Suche ist aufgetreten.");
+            });
+    };
 
     return (
         <Stack.Navigator initialRouteName="Parkhaus-Liste">
@@ -45,13 +64,14 @@ export default function ParkingListNavigator(props: IProps) {
                                     color={colors.navigationBlue}
                                     backgroundColor="transparent"
                                     underlayColor="transparent"
-                                    onPress={() =>
-                                        navigation.navigate("Karte", {
-                                            destinationCoords: {
-                                                latitude: garage.coords.latitude,
-                                                longitude: garage.coords.longitude,
-                                            },
-                                        })
+                                    onPress={
+                                        () => navigateToParkingGarage(garage.coords)
+                                        // navigation.navigate("Karte", {
+                                        //     destinationCoords: {
+                                        //         latitude: garage.coords.latitude,
+                                        //         longitude: garage.coords.longitude,
+                                        //     },
+                                        // })
                                     }
                                     name={"navigation-variant"}
                                     size={40}

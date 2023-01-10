@@ -4,12 +4,13 @@ import { StyleSheet, View, Dimensions, Button } from "react-native";
 import { useEffect, useState } from "react";
 import * as Location from "expo-location";
 import * as TaskManager from "expo-task-manager";
-import { useGeofenceEvent } from "./Geofencing/geofencingHook";
-import { IGarage } from "./IGarage";
-import { useAPIcall } from "./ParkingAPI/useAPIcall";
+import { useGeofenceEvent } from "../Geofencing/geofencingHook";
+import { IGarage } from "../IGarage";
+import { useAPIcall } from "../ParkingAPI/useAPIcall";
 import { Directions } from "./Directions";
 import { ParamListBase, RouteProp } from "@react-navigation/native";
 import Toast from "react-native-root-toast";
+import { findCorrectGpxFile } from "../Navigation/findCorrectGpxFile";
 
 const GEOFENCING_TASK = "GEOFENCING_TASK";
 
@@ -33,24 +34,20 @@ export interface DirectionCoords {
     destCoords: LatLng;
 }
 
-const emptyDirCoords: DirectionCoords = {
-    startCoords: { latitude: 0, longitude: 0 },
-    destCoords: { latitude: 0, longitude: 0 },
-};
-
 export default function Map(props: IProps) {
     const { route, navigation, volume, mapsOn, staticParkingData } = props;
     const [positions, setPositions] = useState<LatLng[]>([]);
     const [region, setRegion] = useState<Region>(defaultRegion);
-    const [showDirections, setShowDirections] = useState<DirectionCoords>(emptyDirCoords);
+    const [showDirections, setShowDirections] = useState<any[]>([]);
 
     const dynamicParkingData = useAPIcall(true);
     const nameAndInGeofence = useGeofenceEvent(volume, dynamicParkingData);
 
     useEffect(() => {
         if (route.params !== undefined) {
-            const params: any = route.params;
-            startNavigation(params.destinationCoords!);
+            if ("trackPoints" in route.params) {
+                startNavigation(route.params.trackPoints as any[]);
+            }
         }
     }, [route]);
 
@@ -114,25 +111,30 @@ export default function Map(props: IProps) {
     }, []);
 
     useEffect(() => {
-        setShowDirections(emptyDirCoords);
+        setShowDirections([]);
     }, [mapsOn]);
 
     const abortNavigation = () => {
-        setShowDirections(emptyDirCoords);
+        setShowDirections([]);
     };
 
-    const startNavigation = async (destinationCoords: LatLng = { latitude: 0, longitude: 0 }) => {
-        Location.getCurrentPositionAsync({})
-            .then((location) => {
-                setShowDirections({ startCoords: location.coords, destCoords: destinationCoords });
-            })
-            .catch(() => {
-                Toast.show("Standort-Erlaubnis wurde nicht erteilt!\n" + "Keine Navigation möglich.");
-            });
+    const startNavigation = async (trackPoints: any[]) => {
+        if (trackPoints.length === 0) {
+            findCorrectGpxFile({ latitude: 0, longitude: 0 }, mapsOn)
+                .then((nearestTrackPoints) => {
+                    if (nearestTrackPoints !== null) {
+                        setShowDirections(nearestTrackPoints);
+                    }
+                })
+                .catch(() => {
+                    Toast.show("Ein Fehler bei der Routen-Suche ist aufgetreten.");
+                });
+        }
+        setShowDirections(trackPoints);
     };
 
     const resetNavigation = () => {
-        setShowDirections(emptyDirCoords);
+        setShowDirections([]);
     };
 
     return (
@@ -154,7 +156,7 @@ export default function Map(props: IProps) {
                     resetNavigation={resetNavigation}
                 ></Directions>
             </MapView>
-            <Button title="Starten" onPress={() => startNavigation()}></Button>
+            <Button title="Starten" onPress={() => startNavigation([])}></Button>
             <Button title="Abbrechen" onPress={abortNavigation}></Button>
         </View>
     );
