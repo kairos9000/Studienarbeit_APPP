@@ -24,7 +24,7 @@ export default function ParkingListNavigator(props: IProps) {
     const dynamicParkingData = useAPIcall();
 
     return (
-        <Stack.Navigator screenOptions={{ presentation: "modal" }} initialRouteName="Parkhaus-Liste">
+        <Stack.Navigator initialRouteName="Parkhaus-Liste">
             <Stack.Screen name="Parkhaus-Liste" options={{ headerShown: false }}>
                 {(props) => (
                     <ParkingList

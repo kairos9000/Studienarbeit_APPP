@@ -11,7 +11,10 @@ export function ParkingListItem({ item, onPress, backgroundColor, textColor }: a
                 {item.open === 0 ? "Offen" : "Geschlossen"}
             </Text>
             <View style={styles.trend}>
-                <Text>{item.distance}m</Text>
+                <Text>
+                    {item.distance}
+                    {item.distance === "n.a." ? "" : "m"}
+                </Text>
                 {item.trend === 1 || item.trend === -1 ? (
                     <AntDesign
                         name={item.trend === 1 ? "caretup" : "caretdown"}

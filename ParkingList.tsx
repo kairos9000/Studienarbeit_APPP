@@ -93,51 +93,50 @@ export default function ParkingList({ navigation, dynamicParkingData, staticPark
     };
 
     useEffect(() => {
-        (async () => {
-            let dynamicDataWithDistance: any[] = [];
-            // Berechnung der Distanz, wenn keine Daten vom Hook gegeben wurden
-            if (userCoords.length === 0) {
-                try {
-                    let location = await Location.getCurrentPositionAsync({});
-                    dynamicDataWithDistance = dataWithDistance(location.coords);
-                } catch {
-                    Toast.show("Standort-Erlaubnis wurde nicht erteilt!\n" + "Keine Navigation möglich.");
-                }
-                // Berechnung mit Daten des Hooks
+        let dynamicDataWithDistance: any[] = [];
+        // Berechnung der Distanz, wenn keine Daten vom Hook gegeben wurden
+        if (userCoords.length === 0) {
+            // Nutzer-Position hier manuell zu holen würde viele await-callbacks erzeugen
+            // und die App unperformant machen, wenn noch keine Daten
+            // aus dem Geofence-Hook geliefert wurde => nur n.a. als Distanz angeben, bis der Geofence Hook
+            // Daten liefert
+            // callbacks wurden durch "Hack" mit selbst aufrufender async-await Funktion erstellt, also
+            // (async () => {})(); => führt bei zu vielen Aufrufen zu Performanceproblemen, da diese Funktionen
+            // auf den Callback-Stapel gelegt werden, und die App nicht mehr mit Aktualisieren mitkommt
+            dynamicParkingData.Parkhaus.forEach((garage: DynamicParkingData) => {
+                dynamicDataWithDistance.push({ ...garage, distance: "n.a." });
+            });
+            // Berechnung mit Daten des Hooks
+        } else {
+            dynamicDataWithDistance = dataWithDistance(userCoords[0].getUserCoords!);
+        }
+        let listDataBuffer: ItemInformation[] = [];
+        if (staticParkingData.length > 0) {
+            if (sorting === "Distance") {
+                // Sortieren der Daten nach der Reihenfolge des Arrays aus IDs der Parkhäuser
+                dynamicDataWithDistance.sort((a: any, b: any) => (a.distance > b.distance ? 1 : -1));
+            } else if (sorting === "FreeSpace") {
+                dynamicDataWithDistance.sort((a: any, b: any) => (a.Frei < b.Frei ? 1 : -1));
             } else {
-                dynamicDataWithDistance = dataWithDistance(userCoords[0].getUserCoords!);
+                dynamicDataWithDistance.sort((a: any, b: any) => (a.Name > b.Name ? 1 : -1));
             }
-            let listDataBuffer: ItemInformation[] = [];
-            if (staticParkingData.length > 0) {
-                if (sorting === "Distance") {
-                    // Sortieren der Daten nach der Reihenfolge des Arrays aus IDs der Parkhäuser
-                    dynamicDataWithDistance.sort((a: any, b: any) => (a.distance > b.distance ? 1 : -1));
-                } else if (sorting === "FreeSpace") {
-                    dynamicDataWithDistance.sort((a: any, b: any) => (a.Frei < b.Frei ? 1 : -1));
-                } else {
-                    dynamicDataWithDistance.sort((a: any, b: any) => (a.Name > b.Name ? 1 : -1));
-                }
-                // Erstellen der Liste für die FlatList aus den dynamischen und statischen Daten
-                dynamicDataWithDistance.forEach((garage: any) => {
-                    const staticData = staticParkingData.find((data: IGarage) => garage.ID === data.id);
-                    if (staticData !== undefined) {
-                        if (
-                            showOnlyFavorites === false ||
-                            (showOnlyFavorites === true && staticData.favorite === true)
-                        ) {
-                            listDataBuffer.push({
-                                id: staticData.id,
-                                name: staticData.name,
-                                trend: garage.Trend,
-                                open: garage.Geschlossen,
-                                distance: Math.round(garage.distance),
-                            });
-                        }
+            // Erstellen der Liste für die FlatList aus den dynamischen und statischen Daten
+            dynamicDataWithDistance.forEach((garage: any) => {
+                const staticData = staticParkingData.find((data: IGarage) => garage.ID === data.id);
+                if (staticData !== undefined) {
+                    if (showOnlyFavorites === false || (showOnlyFavorites === true && staticData.favorite === true)) {
+                        listDataBuffer.push({
+                            id: staticData.id,
+                            name: staticData.name,
+                            trend: garage.Trend,
+                            open: garage.Geschlossen,
+                            distance: Math.round(garage.distance),
+                        });
                     }
-                });
-            }
-            setListData(listDataBuffer);
-        })();
+                }
+            });
+        }
+        setListData(listDataBuffer);
     }, [dynamicParkingData, showOnlyFavorites, sorting, userCoords]);
 
     const onPress = (item: IGarage) => {

@@ -87,8 +87,10 @@ export default function Map(props: IProps) {
                 if (TaskManager.isTaskDefined(GEOFENCING_TASK)) {
                     try {
                         Location.startLocationUpdatesAsync(GEOFENCING_TASK, {
-                            accuracy: Location.LocationAccuracy.BestForNavigation,
                             // Updates nur wenn sich der Nutzer bewegt hat => performanter
+                            // Bugs möglich wenn Genauigkeit des Updates zu hoch gesetzt wird, z.B.
+                            // Location.LocationAccuracy.BestForNavigation => führt zu zu vielen
+                            // Updates, bei denen sich die Position des Nutzers kaum bis gar nicht ändert
                             deferredUpdatesDistance: 5,
                             deferredUpdatesInterval: 500,
                         });
