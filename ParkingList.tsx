@@ -19,6 +19,7 @@ interface ItemInformation {
     name: string;
     trend: number;
     open: number;
+    distance: number;
 }
 
 type Sorting = "Alphabet" | "Distance" | "FreeSpace";
@@ -50,6 +51,7 @@ export default function ParkingList({ navigation, dynamicParkingData, staticPark
                     name: garage.name,
                     trend: dynamicData.Trend,
                     open: dynamicData.Geschlossen,
+                    distance: 0,
                 });
             }
         });
@@ -75,7 +77,7 @@ export default function ParkingList({ navigation, dynamicParkingData, staticPark
         AsyncStorage.setItem(listFavorite, JSON.stringify(showOnlyFavorites));
     }, [showOnlyFavorites]);
 
-    const sortIDsWithDistance = (coordsOfUser: LatLng) => {
+    const dataWithDistance = (coordsOfUser: LatLng) => {
         let distanceData: any[] = [];
         // Durchgehen der Daten und erstellen einer Liste, welche die IDs und die Entfernung
         // des Nutzers zu jedem Parkhaus enthält
@@ -84,49 +86,39 @@ export default function ParkingList({ navigation, dynamicParkingData, staticPark
 
             if (staticData !== undefined) {
                 const distance = haversineDistance(coordsOfUser, staticData.coords);
-                distanceData.push({ id: staticData.id, distance: distance });
+                distanceData.push({ ...garage, distance: distance });
             }
         });
-        // Sortieren nach der Entfernung => aufsteigend
-        distanceData.sort((a, b) => (a.distance > b.distance ? 1 : -1));
-        // Nur ein Array aus IDs zurückgeben => IDs sind nach Entfernung sortiert
-        return distanceData.map((data) => data.id);
+        return distanceData;
     };
 
     useEffect(() => {
         (async () => {
+            let dynamicDataWithDistance: any[] = [];
+            // Berechnung der Distanz, wenn keine Daten vom Hook gegeben wurden
+            if (userCoords.length === 0) {
+                try {
+                    let location = await Location.getCurrentPositionAsync({});
+                    dynamicDataWithDistance = dataWithDistance(location.coords);
+                } catch {
+                    Toast.show("Standort-Erlaubnis wurde nicht erteilt!\n" + "Keine Navigation möglich.");
+                }
+                // Berechnung mit Daten des Hooks
+            } else {
+                dynamicDataWithDistance = dataWithDistance(userCoords[0].getUserCoords!);
+            }
             let listDataBuffer: ItemInformation[] = [];
             if (staticParkingData.length > 0) {
                 if (sorting === "Distance") {
-                    let sortedIds: any[] = [];
-                    // Berechnung der Distanz, wenn keine Daten vom Hook gegeben wurden
-                    if (userCoords.length === 0) {
-                        try {
-                            let location = await Location.getCurrentPositionAsync({});
-                            sortedIds = sortIDsWithDistance(location.coords);
-                        } catch {
-                            Toast.show("Standort-Erlaubnis wurde nicht erteilt!\n" + "Keine Navigation möglich.");
-                        }
-                        // Berechnung mit Daten des Hooks
-                    } else {
-                        sortedIds = sortIDsWithDistance(userCoords[0].getUserCoords!);
-                    }
                     // Sortieren der Daten nach der Reihenfolge des Arrays aus IDs der Parkhäuser
-                    dynamicParkingData.Parkhaus.sort(
-                        (a: DynamicParkingData, b: DynamicParkingData) =>
-                            sortedIds.indexOf(a.ID) - sortedIds.indexOf(b.ID)
-                    );
+                    dynamicDataWithDistance.sort((a: any, b: any) => (a.distance > b.distance ? 1 : -1));
                 } else if (sorting === "FreeSpace") {
-                    dynamicParkingData.Parkhaus.sort((a: DynamicParkingData, b: DynamicParkingData) =>
-                        a.Frei < b.Frei ? 1 : -1
-                    );
+                    dynamicDataWithDistance.sort((a: any, b: any) => (a.Frei < b.Frei ? 1 : -1));
                 } else {
-                    dynamicParkingData.Parkhaus.sort((a: DynamicParkingData, b: DynamicParkingData) =>
-                        a.Name > b.Name ? 1 : -1
-                    );
+                    dynamicDataWithDistance.sort((a: any, b: any) => (a.Name > b.Name ? 1 : -1));
                 }
                 // Erstellen der Liste für die FlatList aus den dynamischen und statischen Daten
-                dynamicParkingData.Parkhaus.forEach((garage: DynamicParkingData) => {
+                dynamicDataWithDistance.forEach((garage: any) => {
                     const staticData = staticParkingData.find((data: IGarage) => garage.ID === data.id);
                     if (staticData !== undefined) {
                         if (
@@ -138,6 +130,7 @@ export default function ParkingList({ navigation, dynamicParkingData, staticPark
                                 name: staticData.name,
                                 trend: garage.Trend,
                                 open: garage.Geschlossen,
+                                distance: Math.round(garage.distance),
                             });
                         }
                     }

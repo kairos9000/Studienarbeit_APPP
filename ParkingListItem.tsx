@@ -1,4 +1,4 @@
-import { TouchableOpacity, Text, StyleSheet, Dimensions } from "react-native";
+import { TouchableOpacity, Text, StyleSheet, Dimensions, View } from "react-native";
 import { colors } from "./colors";
 import { AntDesign, MaterialCommunityIcons } from "@expo/vector-icons";
 
@@ -10,16 +10,18 @@ export function ParkingListItem({ item, onPress, backgroundColor, textColor }: a
             <Text style={[styles.openClosed, { color: item.open === 0 ? colors.openGreen : colors.red }]}>
                 {item.open === 0 ? "Offen" : "Geschlossen"}
             </Text>
-            {item.trend === 1 || item.trend === -1 ? (
-                <AntDesign
-                    style={styles.trend}
-                    name={item.trend === 1 ? "caretup" : "caretdown"}
-                    size={30}
-                    color={item.trend === -1 ? colors.primaryBackground : colors.red}
-                />
-            ) : (
-                <MaterialCommunityIcons style={styles.trend} size={30} name={"minus-thick"} />
-            )}
+            <View style={styles.trend}>
+                <Text>{item.distance}m</Text>
+                {item.trend === 1 || item.trend === -1 ? (
+                    <AntDesign
+                        name={item.trend === 1 ? "caretup" : "caretdown"}
+                        size={30}
+                        color={item.trend === -1 ? colors.primaryBackground : colors.red}
+                    />
+                ) : (
+                    <MaterialCommunityIcons size={30} name={"minus-thick"} />
+                )}
+            </View>
         </TouchableOpacity>
     );
 }
@@ -58,5 +60,6 @@ const styles = StyleSheet.create({
         position: "absolute",
         top: "55%",
         right: 20,
+        alignItems: "flex-end",
     },
 });

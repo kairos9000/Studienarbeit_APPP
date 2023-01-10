@@ -81,21 +81,30 @@ export default function Map(props: IProps) {
             } catch {
                 Toast.show("Standort-Erlaubnis wurde nicht erteilt!\n" + "Keine Navigation möglich.");
             }
+
             // Starten der kontinuierlichen Updates der Position des Nutzers, für das Geofencing
             if (status === "granted") {
                 if (TaskManager.isTaskDefined(GEOFENCING_TASK)) {
-                    Location.startLocationUpdatesAsync(GEOFENCING_TASK, {
-                        accuracy: Location.LocationAccuracy.BestForNavigation,
-                        // Updates nur wenn sich der Nutzer bewegt hat => performanter
-                        deferredUpdatesDistance: 5,
-                        deferredUpdatesInterval: 500,
-                    });
+                    try {
+                        Location.startLocationUpdatesAsync(GEOFENCING_TASK, {
+                            accuracy: Location.LocationAccuracy.BestForNavigation,
+                            // Updates nur wenn sich der Nutzer bewegt hat => performanter
+                            deferredUpdatesDistance: 5,
+                            deferredUpdatesInterval: 500,
+                        });
+                    } catch {
+                        Toast.show("Standort-Erlaubnis wurde nicht erteilt!\n" + "Keine Navigation möglich.");
+                    }
                 } else {
                     // Falls noch kein Task definiert war, 5 Sekunden warten und nochmal versuchen
                     setTimeout(() => {
-                        Location.startLocationUpdatesAsync(GEOFENCING_TASK, {
-                            accuracy: Location.LocationAccuracy.BestForNavigation,
-                        });
+                        try {
+                            Location.startLocationUpdatesAsync(GEOFENCING_TASK, {
+                                accuracy: Location.LocationAccuracy.BestForNavigation,
+                            });
+                        } catch {
+                            Toast.show("Standort-Erlaubnis wurde nicht erteilt!\n" + "Keine Navigation möglich.");
+                        }
                     }, 5000);
                 }
             }
