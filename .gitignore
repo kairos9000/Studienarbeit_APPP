@@ -9,6 +9,14 @@ npm-debug.*
 *.mobileprovision
 *.orig.*
 web-build/
-
+/Dokumentation/*.aux
+/Dokumentation/Makefile
+/Dokumentation/*.lof
+/Dokumentation/*.log
+/Dokumentation/*.lot
+/Dokumentation/*.out
+/Dokumentation/*.toc
+/Dokumentation/*.md
+/Dokumentation/bin
 # macOS
 .DS_Store

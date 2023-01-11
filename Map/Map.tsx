@@ -162,6 +162,8 @@ export default function Map(props: IProps) {
         setShowDirections([]);
     };
 
+    // Wenn der Nutzer sich in keinem Geofence befindet das Menü nicht öffnen,
+    // sondern gleich zum nähesten Parkhaus navigieren
     const checkIfMenuNecessary = () => {
         let navigationToNearest = true;
         nameAndInGeofence.forEach((garage) => {
@@ -176,6 +178,7 @@ export default function Map(props: IProps) {
         }
     };
 
+    // Zu einem Parkhaus mit angegebener ID navigieren
     const navigateToSpecificParkingGarage = (id: number) => {
         const staticData = staticParkingData.find((garage) => id === garage.id);
 
@@ -194,6 +197,7 @@ export default function Map(props: IProps) {
         }
     };
 
+    // Info für Infobox zusammenstellen und anzeigen lassen
     const showGarageInfo = (id: number) => {
         const dynamicData = dynamicParkingData.Parkhaus.find((dynamicGarage) => dynamicGarage.ID === id);
         const staticData = staticParkingData.find((staticGarage) => staticGarage.id === id);
@@ -219,8 +223,6 @@ export default function Map(props: IProps) {
                     <Marker
                         key={garage.id}
                         coordinate={garage.coords}
-                        // title={garage.name}
-                        // description={garage.additionalInformation}
                         onPress={() => showGarageInfo(garage.id)}
                         onDeselect={() => setShowInfoBox(false)}
                     >
