@@ -15,12 +15,13 @@ interface IProps {
 type Trends = "Gleichbleibend" | "Steigend" | "Fallend";
 
 export function ParkingListDetails(props: IProps) {
-    const { navigation, dynamicParkingData, staticParkingData } = props;
+    const { dynamicParkingData, staticParkingData } = props;
     const [openingHours, setOpeningHours] = useState<number>(24);
     const [trend, setTrend] = useState<Trends>("Gleichbleibend");
     const [trendColor, setTrendColor] = useState<string>(colors.black);
     const [parkingSpaces, setParkingSpaces] = useState<number>(0);
 
+    // Aktualisierung der angezeigten Daten, wie Trend oder freie Parkplätze
     useEffect(() => {
         const endHour = Number(staticParkingData.openingHours.endHour.split(":")[0]);
         const startHour = Number(staticParkingData.openingHours.startHour.split(":")[0]);

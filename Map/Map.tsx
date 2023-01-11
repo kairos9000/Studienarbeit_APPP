@@ -51,6 +51,9 @@ export default function Map(props: IProps) {
     const dynamicParkingData = useAPIcall(true);
     const nameAndInGeofence = useGeofenceEvent(volume, dynamicParkingData);
 
+    // Annehmen der Punkte aus GPX-Dateien von der Parkhaus-Liste => wenn auf
+    // das Navigations-Icon in einem Listen-Eintrag geklickt wird, werden die
+    // Navigations-Daten hierhin geschickt
     useEffect(() => {
         if (route.params !== undefined) {
             if ("trackPoints" in route.params) {
@@ -59,6 +62,7 @@ export default function Map(props: IProps) {
         }
     }, [route]);
 
+    // Aktualisierung der Marker, sodass diese den neuen Trend-Stand anzeigen
     useEffect(() => {
         let markerListBuffer: any[] = [];
         staticParkingData.forEach((garage) => {
@@ -70,6 +74,8 @@ export default function Map(props: IProps) {
         });
         setMarkerList(markerListBuffer);
 
+        // auch Aktualisierung der Infobox unten, falls diese offen ist, mit der ID, für die zuletzt
+        // die Daten in der Box angezeigt wurden
         if (showInfoBox === true && info !== undefined) {
             showGarageInfo(info.id);
         }
@@ -142,6 +148,8 @@ export default function Map(props: IProps) {
         setShowDirections([]);
     };
 
+    // Navigation starten mit gegebenen Punkten von einer GPX-Datei => falls keine Punkte gegeben sind
+    // wird eine passende GPX-Datei gesucht (oder zu Google-Maps weitergeleitet, falls keine gefunden werden kann)
     const startNavigation = async (trackPoints: any[]) => {
         if (trackPoints.length === 0) {
             findCorrectGpxFile({ latitude: 0, longitude: 0 }, mapsOn)
@@ -155,10 +163,6 @@ export default function Map(props: IProps) {
                 });
         }
         setShowDirections(trackPoints);
-    };
-
-    const resetNavigation = () => {
-        setShowDirections([]);
     };
 
     // Wenn der Nutzer sich in keinem Geofence befindet das Menü nicht öffnen,
