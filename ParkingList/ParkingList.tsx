@@ -100,7 +100,7 @@ export default function ParkingList({ navigation, dynamicParkingData, staticPark
             // Daten liefert
             // callbacks wurden durch "Hack" mit selbst aufrufender async-await Funktion erstellt, also
             // (async () => {})(); => führt bei zu vielen Aufrufen zu Performanceproblemen, da diese Funktionen
-            // auf den Callback-Stapel gelegt werden, und die App nicht mehr mit Aktualisieren mitkommt
+            // auf den Callback-Stapel gelegt werden, und die App nicht mehr mit Aktualisieren mitkommt.
             // Den "Hack" nur in useEffects einfügen, die nur einmal aufgerufen werden oder
             // gar nicht
             dynamicParkingData.Parkhaus.forEach((garage: DynamicParkingData) => {

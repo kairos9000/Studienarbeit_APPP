@@ -96,7 +96,11 @@ export function useGeofenceEvent(volume: boolean, dynamicParkingData: XMLData, g
 
                         if (dynamicData !== undefined) {
                             let notificationWithFreeSpaces = notificationText.substring(0, notificationText.length - 1);
-                            notificationWithFreeSpaces += " mit " + dynamicData.Frei + " freien Parkplätzen.";
+                            if (dynamicData.Frei === 1) {
+                                notificationWithFreeSpaces += " mit einem freien Parkplatz.";
+                            } else {
+                                notificationWithFreeSpaces += " mit " + dynamicData.Frei + " freien Parkplätzen.";
+                            }
                             notificationText = notificationWithFreeSpaces;
                         }
                         if (volume === true) {

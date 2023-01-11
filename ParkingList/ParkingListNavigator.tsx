@@ -64,15 +64,7 @@ export default function ParkingListNavigator(props: IProps) {
                                     color={colors.navigationBlue}
                                     backgroundColor="transparent"
                                     underlayColor="transparent"
-                                    onPress={
-                                        () => navigateToParkingGarage(garage.coords)
-                                        // navigation.navigate("Karte", {
-                                        //     destinationCoords: {
-                                        //         latitude: garage.coords.latitude,
-                                        //         longitude: garage.coords.longitude,
-                                        //     },
-                                        // })
-                                    }
+                                    onPress={() => navigateToParkingGarage(garage.coords)}
                                     name={"navigation-variant"}
                                     size={40}
                                 />

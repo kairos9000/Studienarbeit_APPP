@@ -154,6 +154,7 @@ export default function App() {
                                     staticParkingData={staticParkingData}
                                     volume={volumeOn}
                                     mapsOn={mapsOn}
+                                    setFavorite={setFavorite}
                                     {...props}
                                 />
                             )}
