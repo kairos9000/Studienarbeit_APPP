@@ -1,6 +1,6 @@
 import * as React from "react";
-import MapView, { Callout, LatLng, Marker, Region } from "react-native-maps";
-import { StyleSheet, View, Dimensions, Button, Pressable, Text } from "react-native";
+import MapView, { LatLng, Marker, Region } from "react-native-maps";
+import { StyleSheet, View, Dimensions, Button } from "react-native";
 import { useEffect, useState } from "react";
 import * as Location from "expo-location";
 import * as TaskManager from "expo-task-manager";
@@ -11,8 +11,8 @@ import { Directions } from "./Directions";
 import { ParamListBase, RouteProp } from "@react-navigation/native";
 import Toast from "react-native-root-toast";
 import { findCorrectGpxFile } from "../Navigation/findCorrectGpxFile";
-import { Card, Divider, Menu, Title } from "react-native-paper";
-import { Ionicons, MaterialCommunityIcons } from "@expo/vector-icons";
+import { Divider, Menu } from "react-native-paper";
+import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { colors } from "../colors";
 import { InfoCard } from "./InfoCard";
 
@@ -40,8 +40,7 @@ export interface DirectionCoords {
 }
 
 export default function Map(props: IProps) {
-    const { route, navigation, volume, mapsOn, staticParkingData, setFavorite } = props;
-    const [positions, setPositions] = useState<LatLng[]>([]);
+    const { route, volume, mapsOn, staticParkingData, setFavorite } = props;
     const [region, setRegion] = useState<Region>(defaultRegion);
     const [showDirections, setShowDirections] = useState<any[]>([]);
     const [showMenu, setShowMenu] = useState<boolean>(false);
@@ -247,11 +246,7 @@ export default function Map(props: IProps) {
                     </Marker>
                 ))}
 
-                <Directions
-                    alwaysUseMaps={mapsOn}
-                    dirCoords={showDirections}
-                    resetNavigation={resetNavigation}
-                ></Directions>
+                <Directions dirCoords={showDirections}></Directions>
             </MapView>
             {showInfoBox === true && info !== undefined && (
                 <InfoCard
@@ -279,12 +274,11 @@ export default function Map(props: IProps) {
                         {nameAndInGeofence.map((garage) => {
                             if (garage.inGeofence !== false) {
                                 return (
-                                    <View>
+                                    <View key={garage.id}>
                                         <Divider />
                                         <Menu.Item
                                             onPress={() => navigateToSpecificParkingGarage(garage.id)}
                                             title={garage.name}
-                                            key={garage.id}
                                         />
                                     </View>
                                 );

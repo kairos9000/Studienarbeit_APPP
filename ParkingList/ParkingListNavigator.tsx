@@ -7,8 +7,6 @@ import ParkingList from "./ParkingList";
 import { createStackNavigator } from "@react-navigation/stack";
 import { Ionicons, MaterialCommunityIcons } from "@expo/vector-icons";
 import { IGarage } from "../IGarage";
-import { useState } from "react";
-import { useGeofenceEvent } from "../Geofencing/geofencingHook";
 import { findCorrectGpxFile } from "../Navigation/findCorrectGpxFile";
 import { LatLng } from "react-native-maps";
 import Toast from "react-native-root-toast";

@@ -3,7 +3,6 @@ import { Card, Title } from "react-native-paper";
 import * as Progress from "react-native-progress";
 import { colors } from "../colors";
 import { Pressable, Text, View } from "react-native";
-import { useEffect } from "react";
 
 export function InfoCard({ info, showInfoBox, navigateToParkingGarage, setFavorite }: any) {
     return (
