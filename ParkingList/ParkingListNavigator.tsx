@@ -42,6 +42,7 @@ export default function ParkingListNavigator(props: IProps) {
 
     return (
         <Stack.Navigator initialRouteName="Parkhaus-Liste">
+            {/* Route zur Liste mit den Einträgen */}
             <Stack.Screen name="Parkhaus-Liste" options={{ headerShown: false }}>
                 {(props) => (
                     <ParkingList
@@ -51,11 +52,14 @@ export default function ParkingListNavigator(props: IProps) {
                     />
                 )}
             </Stack.Screen>
+            {/* Einzelne Routen für jedes Parkhaus, die zu deren Detail-Fenstern führen */}
             {staticParkingData.map((garage: IGarage) => (
                 <Stack.Screen
                     name={garage.name}
                     key={garage.id}
                     options={{
+                        // Icons im Header der Detail-Fenster (Navigations-Pfeil und Herz für Favoriten)
+                        // müssen hier definiert werden
                         headerRight: () => (
                             <View style={{ flexDirection: "row" }}>
                                 <MaterialCommunityIcons.Button
@@ -92,12 +96,3 @@ export default function ParkingListNavigator(props: IProps) {
         </Stack.Navigator>
     );
 }
-
-const styles = StyleSheet.create({
-    container: {
-        flex: 1,
-        backgroundColor: colors.gray,
-        alignItems: "center",
-        justifyContent: "center",
-    },
-});
