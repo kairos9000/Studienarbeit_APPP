@@ -19,10 +19,7 @@ export function ParkingListItem(props: IProps) {
                 {item.open === 0 ? "Offen" : "Geschlossen"}
             </Text>
             <View style={styles.trend}>
-                <Text>
-                    {item.distance}
-                    {item.distance === "n.a." ? "" : "m"}
-                </Text>
+                <Text>{isNaN(item.distance) ? "n.a." : item.distance + "m"}</Text>
                 {item.trend === 1 || item.trend === -1 ? (
                     <AntDesign
                         name={item.trend === 1 ? "caretup" : "caretdown"}

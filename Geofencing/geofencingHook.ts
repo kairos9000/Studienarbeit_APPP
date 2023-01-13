@@ -18,6 +18,7 @@ TaskManager.defineTask(GEOFENCING_TASK, (data: any) => {
         Toast.show("Fehler bei Abfragen der Positionsdaten");
         return;
     }
+
     // Nur die letzten Standort-Daten, da sonst sehr viel verarbeitet werden müsste
     const location = data.data.locations.pop();
     for (const handle of geofenceHandles) {
@@ -82,6 +83,14 @@ export function useGeofenceEvent(volume: boolean, dynamicParkingData: XMLData, g
                 setRegions([{ id: 0, name: "", inGeofence: false, getUserCoords: userCoords }]);
                 return;
             }
+
+            // falls regions noch nicht gesetzt wurde, weil die leere geofenceData-Liste zugewiesen wurde
+            // (da asynchron) => versuchen neu zuzuweisen
+            if (regions.length === 0) {
+                setRegions(geofenceData);
+                return;
+            }
+
             if (regionsData.length === 0 && regions.length === 0) {
                 return;
             }
@@ -89,6 +98,7 @@ export function useGeofenceEvent(volume: boolean, dynamicParkingData: XMLData, g
                 const distance = haversineDistance(userCoords, region.coords);
                 if (distance < 200) {
                     let newRegions = [...regions];
+
                     // wenn Nutzer vorher außerhalb des Geofences war Benachrichtigung, dass betreten wurde
                     if (newRegions[index].inGeofence === false) {
                         const dynamicData = dynamicParkingData.Parkhaus.find((data) => data.ID === region.id);
@@ -129,7 +139,7 @@ export function useGeofenceEvent(volume: boolean, dynamicParkingData: XMLData, g
         return () => {
             geofenceHandles = geofenceHandles.filter((handle) => handle !== handleIsInGeofence);
         };
-    }, [volume, dynamicParkingData]);
+    }, [volume, dynamicParkingData, geofenceData]);
 
     return regions;
 }

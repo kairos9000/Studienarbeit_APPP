@@ -148,19 +148,14 @@ export function ParkingListDetails(props: IProps) {
                                 </View>
                             ) : (
                                 <View>
-                                    <Text
-                                        style={{
-                                            fontSize: 20,
-                                        }}
-                                    >
+                                    <Text style={styles.text}>
                                         Erste Stunde: {staticParkingData.pricingDay.firstHour}€
                                     </Text>
-                                    <Text
-                                        style={{
-                                            fontSize: 20,
-                                        }}
-                                    >
-                                        Weitere Stunde: {staticParkingData.pricingDay.followingHours}€
+                                    <Text style={styles.text}>
+                                        {staticParkingData.pricingDay.followingHours === 0 &&
+                                        staticParkingData.pricingDay.specialPrices !== undefined
+                                            ? `Preis für ${staticParkingData.pricingDay.specialPrices.numHours} Stunden: ${staticParkingData.pricingDay.specialPrices.price}€`
+                                            : `Weitere Stunde: ${staticParkingData.pricingDay.followingHours}€`}
                                     </Text>
                                 </View>
                             )}

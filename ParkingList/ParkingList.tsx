@@ -17,7 +17,7 @@ export interface ItemInformation {
     name: string;
     trend: number;
     open: number;
-    distance: number | "n.a.";
+    distance: number;
 }
 
 type Sorting = "Alphabet" | "Distance" | "FreeSpace";
@@ -91,6 +91,7 @@ export default function ParkingList({ navigation, dynamicParkingData, staticPark
     };
 
     useEffect(() => {
+        // console.log(userCoords);
         let dynamicDataWithDistance: any[] = [];
         // Berechnung der Distanz, wenn keine Daten vom Hook gegeben wurden
         if (userCoords.length === 0) {
