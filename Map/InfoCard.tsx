@@ -4,8 +4,17 @@ import * as Progress from "react-native-progress";
 import { colors } from "../colors";
 import { Pressable, Text, View } from "react-native";
 import { useEffect, useState } from "react";
+import { Info } from "./Map";
 
-export function InfoCard({ info, showInfoBox, navigateToParkingGarage, setFavorite }: any) {
+interface IProps {
+    info: Info;
+    showInfoBox(value: boolean): void;
+    navigateToParkingGarage(id: number): void;
+    setFavorite(id: number): void;
+}
+
+export function InfoCard(props: IProps) {
+    const { info, showInfoBox, navigateToParkingGarage, setFavorite } = props;
     const [freeSpacesPercent, setFreeSpacesPercent] = useState<number>(0);
 
     // nötig, da ein Bug im react-native-progress Paket verhindert, dass der richtige

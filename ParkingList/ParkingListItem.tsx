@@ -1,13 +1,21 @@
-import { TouchableOpacity, Text, StyleSheet, Dimensions, View } from "react-native";
+import { TouchableOpacity, Text, StyleSheet, Dimensions, View, ListRenderItemInfo } from "react-native";
 import { colors } from "../colors";
 import { AntDesign, MaterialCommunityIcons } from "@expo/vector-icons";
+import { ItemInformation } from "./ParkingList";
+import { IGarage } from "../IGarage";
+
+interface IProps {
+    item: ItemInformation;
+    onPress(item: ItemInformation): void;
+}
 
 // Anzeige der einzelnen Elemente der Liste
-export function ParkingListItem({ item, onPress, backgroundColor, textColor }: any) {
+export function ParkingListItem(props: IProps) {
+    const { item, onPress } = props;
     return (
-        <TouchableOpacity onPress={() => onPress(item)} style={[styles.item, backgroundColor]}>
-            <Text style={[styles.title, textColor]}>{item.name}</Text>
-            <Text style={[styles.openClosed, { color: item.open === 0 ? colors.openGreen : colors.red }]}>
+        <TouchableOpacity onPress={() => onPress(item)} style={styles.item}>
+            <Text style={styles.title}>{item.name}</Text>
+            <Text style={{ fontSize: 20, color: item.open === 0 ? colors.openGreen : colors.red }}>
                 {item.open === 0 ? "Offen" : "Geschlossen"}
             </Text>
             <View style={styles.trend}>
@@ -55,9 +63,6 @@ const styles = StyleSheet.create({
     },
     title: {
         fontSize: 25,
-    },
-    openClosed: {
-        fontSize: 20,
     },
     trend: {
         position: "absolute",

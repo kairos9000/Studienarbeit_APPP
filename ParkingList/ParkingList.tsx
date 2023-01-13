@@ -12,12 +12,12 @@ import { useGeofenceEvent } from "../Geofencing/geofencingHook";
 import { LatLng } from "react-native-maps";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 
-interface ItemInformation {
+export interface ItemInformation {
     id: number;
     name: string;
     trend: number;
     open: number;
-    distance: number;
+    distance: number | "n.a.";
 }
 
 type Sorting = "Alphabet" | "Distance" | "FreeSpace";
@@ -139,11 +139,9 @@ export default function ParkingList({ navigation, dynamicParkingData, staticPark
         setListData(listDataBuffer);
     }, [staticParkingData, dynamicParkingData, showOnlyFavorites, sorting, userCoords]);
 
-    const onPress = (item: IGarage) => {
+    const onPress = (item: ItemInformation) => {
         navigation.navigate(item.name);
     };
-
-    const renderItem = ({ item }: any) => <ParkingListItem onPress={onPress} item={item} />;
 
     return (
         <View style={styles.container}>
@@ -197,7 +195,11 @@ export default function ParkingList({ navigation, dynamicParkingData, staticPark
                     />
                 </Menu>
             </View>
-            <FlatList data={listData} renderItem={renderItem} keyExtractor={(item) => item.id.toString()} />
+            <FlatList
+                data={listData}
+                renderItem={(listItem) => <ParkingListItem onPress={onPress} item={listItem.item} />}
+                keyExtractor={(item) => item.id.toString()}
+            />
         </View>
     );
 }

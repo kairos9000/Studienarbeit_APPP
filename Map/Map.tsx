@@ -39,6 +39,15 @@ export interface DirectionCoords {
     destCoords: LatLng;
 }
 
+export interface Info {
+    id: number;
+    freeSpacesPercent: number;
+    name: string;
+    freeSpaces: number;
+    allSpaces: number;
+    favorite: boolean;
+}
+
 export default function Map(props: IProps) {
     const { route, volume, mapsOn, staticParkingData, setFavorite } = props;
     const [region, setRegion] = useState<Region>(defaultRegion);
@@ -46,7 +55,7 @@ export default function Map(props: IProps) {
     const [showMenu, setShowMenu] = useState<boolean>(false);
     const [markerList, setMarkerList] = useState<any[]>([]);
     const [showInfoBox, setShowInfoBox] = useState<boolean>(false);
-    const [info, setInfo] = useState<any>({ freeSpacesPercent: 0.0 });
+    const [info, setInfo] = useState<Info>();
 
     const dynamicParkingData = useAPIcall(true);
     const nameAndInGeofence = useGeofenceEvent(volume, dynamicParkingData);
