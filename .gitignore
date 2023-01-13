@@ -14,6 +14,7 @@ web-build/
 /Dokumentation/*.lof
 /Dokumentation/*.log
 /Dokumentation/*.lot
+/Dokumentation/*.lol
 /Dokumentation/*.out
 /Dokumentation/*.toc
 /Dokumentation/*.md

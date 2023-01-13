@@ -2,7 +2,7 @@ import { LatLng } from "react-native-maps";
 
 // https://community.esri.com/t5/coordinate-reference-systems-blog/distance-on-a-sphere-the-haversine-formula/ba-p/902128
 export function haversineDistance(coord1: LatLng, coord2: LatLng): number {
-    const earthRadius = 6371000; // radius of Earth in meters
+    const earthRadius = 6371000; // Radius der Erde in Metern
     // Konvertierung der Winkelkoordinaten (latitude, longitude) ins Bogenmaß für trigonometrische Funktionen
     const phi_1 = degToRadians(coord1.latitude);
     const phi_2 = degToRadians(coord2.latitude);

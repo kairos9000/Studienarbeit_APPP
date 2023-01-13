@@ -124,9 +124,8 @@ export default function Map(props: IProps) {
                     try {
                         Location.startLocationUpdatesAsync(GEOFENCING_TASK, {
                             // Updates nur wenn sich der Nutzer bewegt hat => performanter
-                            accuracy: Location.LocationAccuracy.BestForNavigation,
                             deferredUpdatesDistance: 5,
-                            deferredUpdatesInterval: 500,
+                            deferredUpdatesInterval: 1000,
                         });
                     } catch {
                         Toast.show("Standort-Erlaubnis wurde nicht erteilt!\n" + "Keine Navigation möglich.");

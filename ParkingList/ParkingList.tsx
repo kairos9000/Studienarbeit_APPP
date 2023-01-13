@@ -1,7 +1,7 @@
 import * as React from "react";
 import { StyleSheet, View, FlatList, Switch, Text, Pressable } from "react-native";
-import { DynamicParkingData } from "../ParkingAPI/useAPIcall";
-import { useEffect, useState } from "react";
+import { DynamicParkingData, XMLData } from "../ParkingAPI/useAPIcall";
+import { useEffect, useState, useMemo } from "react";
 import { colors } from "../colors";
 import { IGarage } from "../IGarage";
 import { ParkingListItem } from "./ParkingListItem";
@@ -31,49 +31,19 @@ const IconPlaceHolder = () => {
     return <MaterialCommunityIcons name="check" color={colors.background}></MaterialCommunityIcons>;
 };
 
-export default function ParkingList({ navigation, dynamicParkingData, staticParkingData }: any) {
-    const [listData, setListData] = useState<ItemInformation[]>([]);
+interface IProps {
+    navigation: any;
+    dynamicParkingData: XMLData;
+    staticParkingData: IGarage[];
+}
+
+export default function ParkingList(props: IProps) {
+    const { navigation, dynamicParkingData, staticParkingData } = props;
     const [showOnlyFavorites, setShowOnlyFavorites] = useState<boolean>(false);
     const [showMenu, setShowMenu] = useState<boolean>(false);
     const [sorting, setSorting] = useState<Sorting>("Alphabet");
     // damit sich die Entfernungen zu den Parkhäusern in der Liste automatisch aktualisieren
     const userCoords = useGeofenceEvent(false, { Parkhaus: [], Zeitstempel: 0 }, true);
-
-    useEffect(() => {
-        let listDataBuffer: ItemInformation[] = [];
-        staticParkingData.forEach((garage: IGarage) => {
-            const dynamicData = dynamicParkingData.Parkhaus.find((data: DynamicParkingData) => data.ID === garage.id);
-            if (dynamicData !== undefined) {
-                listDataBuffer.push({
-                    id: garage.id,
-                    name: garage.name,
-                    trend: dynamicData.Trend,
-                    open: dynamicData.Geschlossen,
-                    distance: 0,
-                });
-            }
-        });
-
-        setListData(listDataBuffer);
-        AsyncStorage.getItem(listSorting).then((value) => {
-            if (value !== null) {
-                setSorting(JSON.parse(value));
-            }
-        });
-        AsyncStorage.getItem(listFavorite).then((value) => {
-            if (value !== null) {
-                setShowOnlyFavorites(JSON.parse(value));
-            }
-        });
-    }, []);
-
-    useEffect(() => {
-        AsyncStorage.setItem(listSorting, JSON.stringify(sorting));
-    }, [sorting]);
-
-    useEffect(() => {
-        AsyncStorage.setItem(listFavorite, JSON.stringify(showOnlyFavorites));
-    }, [showOnlyFavorites]);
 
     const dataWithDistance = (coordsOfUser: LatLng) => {
         let distanceData: any[] = [];
@@ -90,8 +60,9 @@ export default function ParkingList({ navigation, dynamicParkingData, staticPark
         return distanceData;
     };
 
-    useEffect(() => {
-        // console.log(userCoords);
+    // die Listendaten memoizen, damit diese Berechnung nur ausgeführt wird, wenn sich eine
+    // der Dependencies ändert und der Wert gecachet wird => performanter
+    const listData = useMemo(() => {
         let dynamicDataWithDistance: any[] = [];
         // Berechnung der Distanz, wenn keine Daten vom Hook gegeben wurden
         if (userCoords.length === 0) {
@@ -137,8 +108,29 @@ export default function ParkingList({ navigation, dynamicParkingData, staticPark
                 }
             });
         }
-        setListData(listDataBuffer);
+        return listDataBuffer;
     }, [staticParkingData, dynamicParkingData, showOnlyFavorites, sorting, userCoords]);
+
+    useEffect(() => {
+        AsyncStorage.getItem(listSorting).then((value) => {
+            if (value !== null) {
+                setSorting(JSON.parse(value));
+            }
+        });
+        AsyncStorage.getItem(listFavorite).then((value) => {
+            if (value !== null) {
+                setShowOnlyFavorites(JSON.parse(value));
+            }
+        });
+    }, []);
+
+    useEffect(() => {
+        AsyncStorage.setItem(listSorting, JSON.stringify(sorting));
+    }, [sorting]);
+
+    useEffect(() => {
+        AsyncStorage.setItem(listFavorite, JSON.stringify(showOnlyFavorites));
+    }, [showOnlyFavorites]);
 
     const onPress = (item: ItemInformation) => {
         navigation.navigate(item.name);
