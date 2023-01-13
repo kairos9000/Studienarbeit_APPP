@@ -3,8 +3,19 @@ import { Card, Title } from "react-native-paper";
 import * as Progress from "react-native-progress";
 import { colors } from "../colors";
 import { Pressable, Text, View } from "react-native";
+import { useEffect, useState } from "react";
 
 export function InfoCard({ info, showInfoBox, navigateToParkingGarage, setFavorite }: any) {
+    const [freeSpacesPercent, setFreeSpacesPercent] = useState<number>(0);
+
+    // nötig, da ein Bug im react-native-progress Paket verhindert, dass der richtige
+    // Prozentwert in der Mitte des Kreises mit Animation angezeigt wird, wenn sich der Wert der freien Parkplätze
+    // nicht explizit ändert => über useState ändern, da dabei initiale Wert 0 an react-native-progress
+    // übergeben wird und dann geändert wird => Kreis bekommt neuen Wert
+    // https://github.com/oblador/react-native-progress/pull/117
+    useEffect(() => {
+        setFreeSpacesPercent(info.freeSpacesPercent);
+    }, [info]);
     return (
         <Card style={{ position: "absolute", bottom: 10 }}>
             <View style={{ position: "absolute", right: 5, top: 5 }}>
@@ -43,9 +54,8 @@ export function InfoCard({ info, showInfoBox, navigateToParkingGarage, setFavori
                     thickness={7}
                     color={info.freeSpacesPercent > 0.1 ? colors.primaryBackground : colors.red}
                     size={90}
-                    progress={info.freeSpacesPercent}
+                    progress={freeSpacesPercent}
                     showsText={true}
-                    animated={false}
                 />
                 <Text style={{ marginTop: 10 }}>
                     {info.freeSpaces} von {info.allSpaces} Parkplätzen frei
