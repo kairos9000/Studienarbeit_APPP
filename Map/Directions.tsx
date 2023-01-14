@@ -1,4 +1,3 @@
-import { useEffect, useState } from "react";
 import { LatLng, Polyline } from "react-native-maps";
 import { colors } from "../colors";
 

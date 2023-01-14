@@ -29,7 +29,7 @@ export const findCorrectGpxFile = (destCoords: LatLng, alwaysUseMaps: boolean) =
             if (destCoords.latitude === 0 && destCoords.longitude === 0) {
                 let minDistance = 100000;
                 let minTrackPoints: any[] = [];
-                // Eigener GPX-Datei Parser, da im Internet kein guter gefunden werden konnte
+                // Eigener GPX-Datei Parser mithilfe des XML-Parsers, da im Internet kein guter gefunden werden konnte
                 gpxFiles.forEach((gpxFile) => {
                     let xml = parser.parse(gpxFile);
                     const trackPoints = xml.gpx.trk.trkseg.trkpt;
