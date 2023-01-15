@@ -1,10 +1,20 @@
 \chapter{Ausblick und Fazit}
 \label{chap:7}
 
-\begin{itemize}
-	\item Pseudo-Navigation verbessern, vielleicht auch durch Directions API von Google => kostet Geld
-	\item Mehr Einstellungsmöglichkeiten (Darkmode)
-	\item Mehr GPX-Dateien für bessere Abdeckung und weniger große Abstände zwischen Nutzer und Startpunkt der Navigation
-	\item Genauere Berechnung des nächsten Parkhauses => nicht über Luftlinie sondern über Weg => Directions API nötig
-	\item Splash Screen und Icon der App
-\end{itemize}
+Eine wichtige Verbesserung, welche die App benutzerfreundlicher machen würde, wäre die Nutzung einer Navigations-API, zum Beispiel die Directions- API von Google. Hiermit kann der Nutzer von jeder Position zu dem gewünschten Parkhaus navigiert werden, ohne die App verlassen zu müssen. Der Nachteil dieser API ist jedoch, dass die Anzahl an Anfragen begrenzt ist. Nachdem die Anfragen aufgebraucht wurden, entstehen Kosten für jede weitere Anfrage. Damit ist die einzige Lösung, welche die interne Navigation um den Altstadtring verbessern würde und kostenfrei ist, mehr GPX-Dateien für eine bessere Abdeckung zu erstellen. Auch ist damit eine Verkleinerung der Abstände zwischen der Nutzerposition und dem Startpunkt der GPX-Dateien möglich, welche zu genaueren Ergebnissen führt, da damit der eingezeichnete Pfad an der Position des Nutzers beginnt.
+
+Eine weitere Besserung für mehr Genauigkeit ist die Berechnung des nähesten Parkhauses nicht über die Luftlinie, sondern über den benötigten Weg zu jedem Parkhaus. Dies kann auch über die Directions-API bewerkstelligt werden, da die Länge eines Pfades auch berechnet werden kann. Somit müsste nur der kürzeste Pfad genommen werden. Auch möglich ist wieder eine bessere Abdeckung mit GPX-Dateien. Hier kann ebenso die Länge des Pfades berechnet werden, was heißt, dass nur die GPX-Datei verwendet werden muss, welche den kürzesten Pfad aufweist. Dies ist jetzt zwar auch möglich, aber sehr ungenau. Auch ist diese Lösung wieder nur für den Altstadtring anwendbar und nicht allgemein für alle Koordinaten des Nutzers, wie die Luftlinie oder die Directions-API.
+
+Doch auch ohne diese Änderungen besitzt die App viele Funktionen, welche eine Informationsbeschaffung für die Parkplatzsituation in Amberg und eine darauffolgende Navigation zu einem gewünschten Parkhaus ermöglichen und erleichtern. Zuerst wurde eine Karte implementiert, welche alle Parkhäuser mit ihrer Position über Markierungen anzeigt. Hier ist bereits eine Navigation zu den Parkhäusern und eine Favorisierung dieser möglich. Die Position des Nutzers auf der Karte wird benutzt, um zu signalisieren, wenn sich der Nutzer einem Parkhaus nähert. Die Funktionsweise der Karte kann über ein Menü konfiguriert werden. Hier kann eingestellt werden, ob die App die Näherung an ein Parkhaus vorlesen soll und ob möglichst die interne Navigation verwendet werden soll. Zudem kann der Nutzer sich einfach zu dem nähesten Parkhaus navigieren lassen, wenn er sich keine Gedanken über freie Parkplätze und Preise machen möchte. Danach wurde eine Liste umgesetzt, in der alle Parkhäuser nach bestimmten Kriterien sortiert angezeigt werden. 
+
+Über die Liste ist eine Detailansicht zu den Daten der Parkhäuser erreichbar, welche Daten wie Öffnungszeiten, Störungen, Preise und den Trend enthält, die aus der Parkhaus-API der Stadt Amberg hervorgehen, welche minütlich abgefragt wird. Auch kann hier das Parkhaus wieder favorisiert oder nicht favorisiert werden. Die Liste kann auch nach diesen Favoriten gefiltert werden, sodass nur diese angezeigt werden. Zuletzt kann der Nutzer auch von den Detail-Fenstern der Parkhäuser zu dem bestimmten Parkhaus navigiert werden, indem er den dafür vorgesehenen Knopf drückt. 
+
+Eine simple Navigation wurde über GPX-Dateien erzeugt. Hier wird die Datei berechnet, welche am meisten mit den Wünschen des Nutzers übereinstimmt und dann in die Karte als Pfad eingezeichnet, dem der Nutzer folgen kann. Die Navigation kann auch wieder abgebrochen werden. Wenn keine Datei passend ist, wird die Navigation über einen Link von Google Maps ausgeführt, indem das Ziel des Nutzers in diesen Link eingetragen wird. Google Maps zeigt damit den Weg von der aktuellen Position des Nutzers zum gewünschten Ziel an.
+
+%\begin{itemize}
+%	\item Pseudo-Navigation verbessern, vielleicht auch durch Directions API von Google => kostet Geld
+%	\item Mehr Einstellungsmöglichkeiten (Darkmode)
+%	\item Mehr GPX-Dateien für bessere Abdeckung und weniger große Abstände zwischen Nutzer und Startpunkt der Navigation
+%	\item Genauere Berechnung des nächsten Parkhauses => nicht über Luftlinie sondern über Weg => Directions API nötig
+%	\item Splash Screen und Icon der App
+%\end{itemize}

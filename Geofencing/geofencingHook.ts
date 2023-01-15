@@ -13,6 +13,8 @@ const staticDataParkingGarage = "@staticData";
 
 let geofenceHandles: TaskManager.TaskManagerTaskExecutor[] = [];
 
+// Definiert Task, der im Hintergrund läuft und von der Funktion startLocationUpdatesAsync in der
+// Map.tsx Komponente aufgerufen wird, wenn neue Positions-Updates nötig sind
 TaskManager.defineTask(GEOFENCING_TASK, (data: any) => {
     if (data.error) {
         Toast.show("Fehler bei Abfragen der Positionsdaten");
@@ -21,6 +23,8 @@ TaskManager.defineTask(GEOFENCING_TASK, (data: any) => {
 
     // Nur die letzten Standort-Daten, da sonst sehr viel verarbeitet werden müsste
     const location = data.data.locations.pop();
+    // ruft nacheinander alle Funktionen auf, die den Hook "subscribed" haben
+    // ähnlich zu publish-subscribe pattern
     for (const handle of geofenceHandles) {
         handle(location.coords);
     }
@@ -135,11 +139,17 @@ export function useGeofenceEvent(volume: boolean, dynamicParkingData: XMLData, g
             });
         };
 
+        // neu erstellte Funktion zu Liste an Funktionen hinzufügen, die
+        // bei einer Positionsänderung aufgerufen werden sollen
         geofenceHandles.push(handleIsInGeofence);
+
+        // return wird bei neu-rendern aufgerufen um Sachen aufzuräumen => entfernt die Funktion aus der Liste
+        // da diese dann nicht mehr gebraucht wird
         return () => {
             geofenceHandles = geofenceHandles.filter((handle) => handle !== handleIsInGeofence);
         };
     }, [volume, dynamicParkingData, geofenceData]);
 
+    // immer wenn regions sich verändert wird der neue Wert zurückgegeben
     return regions;
 }

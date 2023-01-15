@@ -122,6 +122,7 @@ export default function Map(props: IProps) {
             if (status === "granted") {
                 if (TaskManager.isTaskDefined(GEOFENCING_TASK)) {
                     try {
+                        // schickt Daten an Task, der im Hintergrund läuft => in geofencingHook.ts zu finden
                         Location.startLocationUpdatesAsync(GEOFENCING_TASK, {
                             // Updates nur wenn sich der Nutzer bewegt hat => performanter
                             deferredUpdatesDistance: 5,
@@ -235,6 +236,10 @@ export default function Map(props: IProps) {
                         onPress={() => showGarageInfo(garage.id)}
                         onDeselect={() => setShowInfoBox(false)}
                     >
+                        {/* Kleiner Hack, damit die Icons nicht durchsichtig sind,
+                        da die Icons standardmäßig einen ausgeschnittenen Pfeil in der Mitte haben
+                        => ein weißes Rechteck hinter den Marker setzen, damit der Pfeil weiß erscheint
+                        und nicht mehr durchsichtig ist */}
                         <View style={styles.fillView} />
                         <MaterialCommunityIcons
                             size={50}
